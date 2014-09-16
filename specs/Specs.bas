@@ -53,11 +53,15 @@ Public Function RunSpecs(Optional UseNative As Boolean = False) As SpecSuite
         Dict.Add "C", "ABC"
         
         Dict.Item("D") = True
-        Dict.Item("C") = "DEF"
-        Set Dict.Item("B") = CreateDictionary(UseNative)
-        Dict.Item("B").Add "message", "Howdy!"
+        Dict("C") = "DEF"
         
-        .Expect(Dict.Item("B")("message")).ToEqual "Howdy!"
+        Set Dict.Item("B") = CreateDictionary(UseNative)
+        Dict.Item("B").Add "key", "B"
+        Set Dict("A") = CreateDictionary(UseNative)
+        Dict("A").Add "key", "A"
+        
+        .Expect(Dict.Item("A")("key")).ToEqual "A"
+        .Expect(Dict.Item("B")("key")).ToEqual "B"
         .Expect(Dict.Item("C")).ToEqual "DEF"
         .Expect(Dict.Item("D")).ToEqual True
     End With
@@ -93,6 +97,18 @@ Public Function RunSpecs(Optional UseNative As Boolean = False) As SpecSuite
         .Expect(Dict.Exists("a")).ToEqual True
     End With
     
+    With Specs.It("should allow Variant for key")
+        Set Dict = CreateDictionary(UseNative)
+        
+        Key = "A"
+        Dict(Key) = 123
+        .Expect(Dict(Key)).ToEqual 123
+        
+        Key = "B"
+        Set Dict(Key) = CreateDictionary(UseNative)
+        .Expect(Dict(Key).Count).ToEqual 0
+    End With
+    
     ' Methods
     ' ------------------------- '
     With Specs.It("should add an item")
@@ -124,6 +140,8 @@ Public Function RunSpecs(Optional UseNative As Boolean = False) As SpecSuite
     With Specs.It("should get an array of all items")
         Set Dict = CreateDictionary(UseNative)
         
+        .Expect(UBound(Dict.Items)).ToEqual -1
+        
         Dict.Add "A", 123
         Dict.Add "B", 3.14
         Dict.Add "C", "ABC"
@@ -137,6 +155,8 @@ Public Function RunSpecs(Optional UseNative As Boolean = False) As SpecSuite
     
     With Specs.It("should get an array of all keys")
         Set Dict = CreateDictionary(UseNative)
+        
+        .Expect(UBound(Dict.Keys)).ToEqual -1
         
         Dict.Add "A", 123
         Dict.Add "B", 3.14

@@ -8,7 +8,7 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = True
 ''
-' Dictionary v1.0.0
+' Dictionary v1.0.1
 ' (c) Tim Hall - https://github.com/timhall/VBA-Dictionary
 '
 ' Drop-in replacement for Scripting.Dictionary on Mac
@@ -56,7 +56,7 @@ Public Property Get Count() As Long
     Count = pKeys.Count
 End Property
 
-Public Property Get Item(Key As String) As Variant
+Public Property Get Item(Key As Variant) As Variant
 Attribute Item.VB_UserMemId = 0
     Dim Index As Long
     Index = IndexOfKey(Key)
@@ -71,19 +71,19 @@ Attribute Item.VB_UserMemId = 0
         ' Not found -> Returns Empty
     End If
 End Property
-Public Property Let Item(Key As String, Value As Variant)
+Public Property Let Item(Key As Variant, Value As Variant)
     AddItem Key, Value
 End Property
-Public Property Set Item(Key As String, Value As Variant)
+Public Property Set Item(Key As Variant, Value As Variant)
     AddItem Key, Value
 End Property
 
-Public Property Let Key(Previous As String, Updated As String)
+Public Property Let Key(Previous As Variant, Updated As Variant)
     Dim Index As Long
     Index = IndexOfKey(Previous)
     
     If Index >= 0 Then
-        ReplaceItemInCollection pKeys, Updated, Index
+        ReplaceItemInCollection pKeys, CStr(Updated), Index
     End If
 End Property
 
@@ -97,9 +97,9 @@ End Property
 ' @param {String} Key
 ' @param {Item} Variant
 ' --------------------------------------------- '
-Public Sub Add(Key As String, Item As Variant)
+Public Sub Add(Key As Variant, Item As Variant)
     If Not Me.Exists(Key) Then
-        pKeys.Add Key
+        pKeys.Add CStr(Key)
         pItems.Add Item
     Else
         ' This key is already associated with an element of this collection
@@ -113,7 +113,7 @@ End Sub
 ' @param {String} Key
 ' @return {Boolean}
 ' --------------------------------------------- '
-Public Function Exists(Key As String) As Boolean
+Public Function Exists(Key As Variant) As Boolean
     Exists = IndexOfKey(Key) >= 0
 End Function
 
@@ -140,7 +140,7 @@ End Function
 '
 ' @param {String} Key
 ' --------------------------------------------- '
-Public Sub Remove(Key As String)
+Public Sub Remove(Key As Variant)
     Dim Index As Long
     Index = IndexOfKey(Key)
     
@@ -165,11 +165,12 @@ End Sub
 ' Private Functions
 ' ============================================= '
 
-Private Function IndexOfKey(Key As String) As Long
+Private Function IndexOfKey(Key As Variant) As Long
     Dim i As Long
+    Key = CStr(Key)
     
     For i = 1 To pKeys.Count
-        If VBA.StrComp(CStr(pKeys(i)), Key, Me.CompareMode) = 0 Then
+        If VBA.StrComp(pKeys(i), Key, Me.CompareMode) = 0 Then
             IndexOfKey = i
             Exit Function
         End If
@@ -179,14 +180,14 @@ Private Function IndexOfKey(Key As String) As Long
     IndexOfKey = -1
 End Function
 
-Private Sub AddItem(Key As String, Item As Variant)
+Private Sub AddItem(Key As Variant, Item As Variant)
     Dim Index As Long
     Index = IndexOfKey(Key)
     
     If Index >= 0 Then
         ReplaceItemInCollection pItems, Item, Index
     Else
-        pKeys.Add Key
+        pKeys.Add CStr(Key)
         pItems.Add Item
     End If
 End Sub
@@ -208,14 +209,18 @@ Private Function CollectionToArray(Coll As Collection) As Variant
     Dim i As Long
     
     ' Collection is 1-based / Variant is 0-based
-    ReDim Arr(Coll.Count - 1)
-    For i = 1 To Coll.Count
-        If IsObject(Coll(i)) Then
-            Set Arr(i - 1) = Coll(i)
-        Else
-            Arr(i - 1) = Coll(i)
-        End If
-    Next i
+    If Coll.Count > 0 Then
+        ReDim Arr(Coll.Count - 1)
+        For i = 1 To Coll.Count
+            If IsObject(Coll(i)) Then
+                Set Arr(i - 1) = Coll(i)
+            Else
+                Arr(i - 1) = Coll(i)
+            End If
+        Next i
+    Else
+        Arr = Array()
+    End If
     
     CollectionToArray = Arr
 End Function
