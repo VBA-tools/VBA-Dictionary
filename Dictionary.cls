@@ -8,7 +8,7 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = True
 ''
-' Dictionary v1.0.1
+' Dictionary v1.0.2
 ' (c) Tim Hall - https://github.com/timhall/VBA-Dictionary
 '
 ' Drop-in replacement for Scripting.Dictionary on Mac
@@ -196,7 +196,9 @@ Private Sub ReplaceItemInCollection(ByRef Coll As Collection, Item As Variant, I
     If Index >= 1 And Index <= Coll.Count Then
         Coll.Remove Index
         
-        If Index > Coll.Count Then
+        If Coll.Count = 0 Then
+            Coll.Add Item
+        ElseIf Index > Coll.Count Then
             Coll.Add Item, After:=Index - 1
         Else
             Coll.Add Item, Before:=Index

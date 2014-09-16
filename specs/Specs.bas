@@ -49,6 +49,8 @@ Public Function RunSpecs(Optional UseNative As Boolean = False) As SpecSuite
         Set Dict = CreateDictionary(UseNative)
         
         Dict.Add "A", 123
+        Dict("A") = 456
+        
         Dict.Add "B", 3.14
         Dict.Add "C", "ABC"
         
