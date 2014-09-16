@@ -29,6 +29,9 @@ Dict.Key("B") = "C"
 Dict.Exists "B" ' -> False
 Dict("C")("Inner") ' -> "Value"
 
+Dict.CompareMode = CompareMethods.BinaryCompare
+' -> Throws 5 (Can't change CompareMode when there are items in the Dictionary)
+
 Dict.Remove "B"
 ' -> Throws 32811: Application-defined or object-defined error
 
