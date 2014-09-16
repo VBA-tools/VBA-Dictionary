@@ -8,7 +8,7 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = True
 ''
-' Dictionary v1.0.2
+' Dictionary v1.0.3
 ' (c) Tim Hall - https://github.com/timhall/VBA-Dictionary
 '
 ' Drop-in replacement for Scripting.Dictionary on Mac
@@ -46,7 +46,9 @@ Public Property Get CompareMode() As CompareMethod
 End Property
 Public Property Let CompareMode(Value As CompareMethod)
     If Me.Count > 0 Then
-        Err.Raise 5
+        ' Can't change CompareMode for Dictionary that contains data
+        ' http://msdn.microsoft.com/en-us/library/office/gg278481(v=office.15).aspx
+        Err.Raise 5 ' Invalid procedure call or argument
     End If
     
     pCompareMode = Value
@@ -94,8 +96,8 @@ End Property
 ''
 ' Add an item with the given key
 '
-' @param {String} Key
-' @param {Item} Variant
+' @param {Variant} Key
+' @param {Variant} Item
 ' --------------------------------------------- '
 Public Sub Add(Key As Variant, Item As Variant)
     If Not Me.Exists(Key) Then
@@ -110,7 +112,7 @@ End Sub
 ''
 ' Check if an item exists for the given key
 '
-' @param {String} Key
+' @param {Variant} Key
 ' @return {Boolean}
 ' --------------------------------------------- '
 Public Function Exists(Key As Variant) As Boolean
@@ -138,7 +140,7 @@ End Function
 ''
 ' Remove an item for the given key
 '
-' @param {String} Key
+' @param {Variant} Key
 ' --------------------------------------------- '
 Public Sub Remove(Key As Variant)
     Dim Index As Long

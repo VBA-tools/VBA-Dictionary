@@ -51,3 +51,4 @@ UBound(Dict.Items) ' -> -1
 - Complete replacement for `Scripting.Dictionary`
 - __1.0.1__ Allow Variant keys and handle empty Dictionary
 - __1.0.2__ Fix replace with single item in Dictionary
+- __1.0.3__ Documentation fixes
