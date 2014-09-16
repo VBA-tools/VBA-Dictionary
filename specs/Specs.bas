@@ -2,6 +2,8 @@ Attribute VB_Name = "Specs"
 Public Function Specs() As SpecSuite
     InlineRunner.RunSuite RunSpecs(True)
     InlineRunner.RunSuite RunSpecs(False)
+    
+    SpeedTest
 End Function
 
 Public Function RunSpecs(Optional UseNative As Boolean = False) As SpecSuite
@@ -84,19 +86,23 @@ Public Function RunSpecs(Optional UseNative As Boolean = False) As SpecSuite
         Dict.CompareMode = 0
         
         Dict.Add "A", 123
+        Dict("a") = 456
         Dict.Add "B", 3.14
         Dict.Add "C", "ABC"
         
-        .Expect(Dict.Exists("a")).ToEqual False
+        .Expect(Dict("A")).ToEqual 123
+        .Expect(Dict("a")).ToEqual 456
         
         Set Dict = CreateDictionary(UseNative)
         Dict.CompareMode = 1
         
         Dict.Add "A", 123
+        Dict("a") = 456
         Dict.Add "B", 3.14
         Dict.Add "C", "ABC"
         
-        .Expect(Dict.Exists("a")).ToEqual True
+        .Expect(Dict("A")).ToEqual 456
+        .Expect(Dict("a")).ToEqual 456
     End With
     
     With Specs.It("should allow Variant for key")
@@ -240,6 +246,82 @@ Public Function RunSpecs(Optional UseNative As Boolean = False) As SpecSuite
     End With
     
     Set RunSpecs = Specs
+End Function
+
+Public Sub SpeedTest()
+    Dim NativeResults(3) As Variant
+    Dim NonNativeResults(3) As Variant
+    
+    NativeResults(0) = RunSpeedTest(100, True)
+    NativeResults(1) = RunSpeedTest(250, True)
+    NativeResults(2) = RunSpeedTest(500, True)
+    NativeResults(3) = RunSpeedTest(1000, True)
+    
+    NonNativeResults(0) = RunSpeedTest(100, False)
+    NonNativeResults(1) = RunSpeedTest(250, False)
+    NonNativeResults(2) = RunSpeedTest(500, False)
+    NonNativeResults(3) = RunSpeedTest(1000, False)
+    
+    Debug.Print vbNewLine & "SpeedTest Results - Scripting.Dictionary vs. VBA-Dictionary" & vbNewLine
+    PrintResults "Add", NativeResults, NonNativeResults, 1
+    PrintResults "Iterate", NativeResults, NonNativeResults, 2
+End Sub
+
+Public Function PrintResults(Test As String, Before As Variant, After As Variant, Index As Integer) As String
+    Dim BeforeAvg As Double
+    Dim AfterAvg As Double
+    Dim i As Integer
+    For i = LBound(Before) To UBound(Before)
+        BeforeAvg = BeforeAvg + Before(i)(0) / (CDbl(Before(i)(Index)) / 1000)
+        AfterAvg = AfterAvg + After(i)(0) / (CDbl(After(i)(Index)) / 1000)
+    Next i
+    
+    BeforeAvg = BeforeAvg / (UBound(Before) + 1)
+    AfterAvg = AfterAvg / (UBound(After) + 1)
+
+    Dim Results As String
+    Results = Test & ": " & Format(BeforeAvg, "#,##0") & " ops./s vs. " & Format(AfterAvg, "#,##0") & " ops./s, "
+    
+    If AfterAvg <= BeforeAvg Then
+        Results = Results & Format(BeforeAvg / AfterAvg, "#,##0") & "x slower"
+    Else
+        Results = Results & Format(AfterAvg / BeforeAvg, "#,##0") & "x faster"
+    End If
+    
+    Debug.Print Results
+    For i = LBound(Before) To UBound(Before)
+        Debug.Print "  " & Format(Before(i)(0) / (Before(i)(Index) / 1000), "#,##0") & " vs. " & Format(After(i)(0) / (After(i)(Index) / 1000), "#,##0")
+    Next i
+    Debug.Print ""
+End Function
+
+Public Function RunSpeedTest(Optional Count As Long = 1000, Optional UseNative As Boolean = False) As Variant
+    Dim Dict As Object
+    Set Dict = CreateDictionary(UseNative)
+    
+    Dim Timer As New PreciseTimer
+    Timer.StartCounter
+    
+    Dim i As Long
+    For i = 1 To Count
+        Dict.Add CStr(i), i
+    Next i
+    
+    Dim AddResult As Double
+    AddResult = Timer.TimeElapsed
+    
+    Timer.StartCounter
+    
+    Dim Key As Variant
+    Dim Value As Variant
+    For Each Key In Dict.Keys
+        Value = Dict.Item(Key)
+    Next Key
+    
+    Dim IterateResult As Double
+    IterateResult = Timer.TimeElapsed
+    
+    RunSpeedTest = Array(Count, AddResult, IterateResult)
 End Function
 
 Public Function CreateDictionary(Optional UseNative As Boolean = False) As Object
