@@ -23,8 +23,10 @@ Option Explicit
 ' Constants and Private Variables
 ' --------------------------------------------- '
 
-' Store 0: Index, 1: Key, 2: Value
+' KeyValue 0: Key, 1: Value
 Private pKeyValues As Collection
+Private pKeys() As Variant
+Private pItems() As Variant
 Private pCompareMode As CompareMethod
 
 ' --------------------------------------------- '
@@ -132,23 +134,7 @@ End Function
 ' @return {Variant}
 ' --------------------------------------------- '
 Public Function Items() As Variant
-    Dim Arr As Variant
-    
-    If pKeyValues.Count > 0 Then
-        Dim i As Long
-        ReDim Arr(pKeyValues.Count - 1)
-        For i = 1 To pKeyValues.Count
-            If IsObject(pKeyValues(i)(2)) Then
-                Set Arr(i - 1) = pKeyValues(i)(2)
-            Else
-                Arr(i - 1) = pKeyValues(i)(2)
-            End If
-        Next i
-    Else
-        Arr = Array()
-    End If
-    
-    Items = Arr
+    Items = pItems
 End Function
 
 ''
@@ -157,19 +143,7 @@ End Function
 ' @return {Variant}
 ' --------------------------------------------- '
 Public Function Keys() As Variant
-    Dim Arr As Variant
-    
-    If pKeyValues.Count > 0 Then
-        Dim i As Long
-        ReDim Arr(pKeyValues.Count - 1)
-        For i = 1 To pKeyValues.Count
-            Arr(i - 1) = pKeyValues(i)(1)
-        Next i
-    Else
-        Arr = Array()
-    End If
-    
-    Keys = Arr
+    Keys = pKeys
 End Function
 
 ''
@@ -194,6 +168,8 @@ End Sub
 ' --------------------------------------------- '
 Public Sub RemoveAll()
     Set pKeyValues = New Collection
+    Erase pKeys
+    Erase pItems
 End Sub
 
 ' ============================================= '
@@ -205,45 +181,111 @@ Private Function GetKeyValue(Key As Variant) As Variant
     GetKeyValue = pKeyValues(GetFormattedKey(Key))
 End Function
 
-Private Sub AddKeyValue(Key As Variant, Value As Variant)
+Private Sub AddKeyValue(Key As Variant, Value As Variant, Optional Index As Long = -1)
+    If Me.Count = 0 Then
+        ReDim Preserve pKeys(0 To 0)
+        ReDim Preserve pItems(0 To 0)
+    Else
+        ReDim Preserve pKeys(0 To UBound(pKeys) + 1)
+        ReDim Preserve pItems(0 To UBound(pItems) + 1)
+    End If
+    
     Dim FormattedKey As String
     FormattedKey = GetFormattedKey(Key)
-    pKeyValues.Add Array(pKeyValues.Count + 1, FormattedKey, Value), FormattedKey
-End Sub
-
-Private Sub ReplaceKeyValue(KeyValue As Variant, Key As Variant, Value As Variant)
-    ' Remove previous KeyValue
-    RemoveKeyValue KeyValue
     
-    ' Add new key and value
-    Dim Index As Long
-    Dim NewKeyValue As Variant
-    Index = KeyValue(0)
-    NewKeyValue = Array(Index, GetFormattedKey(Key), Value)
-    
-    ' Add updated key value back to KeyValues
-    If pKeyValues.Count = 0 Then
-        pKeyValues.Add NewKeyValue, CStr(Key)
-    ElseIf Index > pKeyValues.Count Then
-        pKeyValues.Add NewKeyValue, CStr(Key), After:=Index - 1
+    If Index > 0 And Index <= pKeyValues.Count Then
+        Dim i As Long
+        For i = UBound(pKeys) To Index Step -1
+            pKeys(i) = pKeys(i - 1)
+            If IsObject(pItems(i - 1)) Then
+                Set pItems(i) = pItems(i - 1)
+            Else
+                pItems(i) = pItems(i - 1)
+            End If
+        Next i
+        
+        pKeys(Index - 1) = Key
+        If IsObject(Value) Then
+            Set pItems(Index - 1) = Value
+        Else
+            pItems(Index - 1) = Value
+        End If
+        
+        pKeyValues.Add Array(FormattedKey, Key, Value), FormattedKey, Before:=Index
     Else
-        pKeyValues.Add NewKeyValue, CStr(Key), Before:=Index
+        pKeys(UBound(pKeys)) = Key
+        If IsObject(Value) Then
+            Set pItems(UBound(pItems)) = Value
+        Else
+            pItems(UBound(pItems)) = Value
+        End If
+        
+        pKeyValues.Add Array(FormattedKey, Key, Value), FormattedKey
     End If
 End Sub
 
-Private Sub RemoveKeyValue(KeyValue As Variant)
+Private Sub ReplaceKeyValue(KeyValue As Variant, Key As Variant, Value As Variant)
+    Dim Index As Long
+    Dim i As Integer
+    
+    For i = 0 To UBound(pKeys)
+        If pKeys(i) = KeyValue(1) Then
+            Index = i + 1
+            Exit For
+        End If
+    Next i
+    
+    ' Remove existing value
+    RemoveKeyValue KeyValue, Index
+    
+    ' Add new key value back
+    AddKeyValue Key, Value, Index
+End Sub
+
+Private Sub RemoveKeyValue(KeyValue As Variant, Optional ByVal Index As Long = -1)
+    Dim i As Long
+    If Index = -1 Then
+        For i = 0 To UBound(pKeys)
+            If pKeys(i) = KeyValue(1) Then
+                Index = i
+            End If
+        Next i
+    Else
+        Index = Index - 1
+    End If
+    
+    If Index >= 0 And Index <= UBound(pKeys) Then
+        For i = Index To UBound(pKeys) - 1
+            pKeys(i) = pKeys(i + 1)
+            
+            If IsObject(pItems(i + 1)) Then
+                Set pItems(i) = pItems(i + 1)
+            Else
+                pItems(i) = pItems(i + 1)
+            End If
+        Next i
+        
+        If UBound(pKeys) = 0 Then
+            Erase pKeys
+            Erase pItems
+        Else
+            ReDim Preserve pKeys(0 To UBound(pKeys) - 1)
+            ReDim Preserve pItems(0 To UBound(pItems) - 1)
+        End If
+    End If
+    
     pKeyValues.Remove KeyValue(0)
 End Sub
 
 Private Function GetFormattedKey(Key As Variant) As String
     GetFormattedKey = CStr(Key)
-    If Me.CompareMode = CompareMethod.TextCompare Then
-        GetFormattedKey = UCase(GetFormattedKey)
-    ElseIf Me.CompareMode = CompareMethod.BinaryCompare Then
+    If Me.CompareMode = CompareMethod.BinaryCompare Then
         ' Collection does not have method of setting key comparison
         ' So case-sensitive keys aren't supported by default
         ' -> Approach: Append lowercase characters to original key
         '    AbC -> AbC__b, abc -> abc__abc, ABC -> ABC
+        '    Won't work in very strange cases, but should work for now
+        '    AbBb -> AbBb__bb matches AbbB -> AbbB__bb
         Dim Lowercase As String
         Lowercase = ""
         
@@ -251,7 +293,7 @@ Private Function GetFormattedKey(Key As Variant) As String
         Dim Ascii As Integer
         Dim Char As String
         For i = 1 To Len(GetFormattedKey)
-            Char = Mid$(GetFormattedKey, i, 1)
+            Char = VBA.Mid$(GetFormattedKey, i, 1)
             Ascii = Asc(Char)
             If Ascii >= 97 And Ascii <= 122 Then
                 Lowercase = Lowercase & Char
@@ -264,90 +306,10 @@ Private Function GetFormattedKey(Key As Variant) As String
     End If
 End Function
 
-'Private Function GetKey(KeyValue As Variant) As String
-'    If Not IsEmpty(KeyValue) Then
-'        GetKey = KeyValue(0)
-'    End If
-'End Function
-'Private Function GetValue(KeyValue As Variant) As Variant
-'    If Not IsEmpty(KeyValue) Then
-'        If IsObject(KeyValue(1)) Then
-'            Set GetValue = KeyValue(1)
-'        Else
-'            GetValue = KeyValue(1)
-'        End If
-'    End If
-'End Function
-'Private Function GetIndex(KeyValue As Variant) As Long
-'    If Not IsEmpty(KeyValue) Then
-'        GetIndex = KeyValue(2)
-'    End If
-'End Function
-
-'Private Function IndexOfKey(Key As Variant) As Long
-'    Dim i As Long
-'    Key = CStr(Key)
-'
-'    For i = 1 To pKeys.Count
-'        If VBA.StrComp(pKeys(i), Key, Me.CompareMode) = 0 Then
-'            IndexOfKey = i
-'            Exit Function
-'        End If
-'    Next i
-'
-'    ' Not found
-'    IndexOfKey = -1
-'End Function
-'
-'Private Sub AddItem(Key As Variant, Item As Variant)
-'    Dim Index As Long
-'    Index = IndexOfKey(Key)
-'
-'    If Index >= 0 Then
-'        ReplaceItemInCollection pItems, Item, Index
-'    Else
-'        pKeys.Add CStr(Key)
-'        pItems.Add Item
-'    End If
-'End Sub
-'
-'Private Sub ReplaceItemInCollection(ByRef Coll As Collection, Item As Variant, Index As Long)
-'    If Index >= 1 And Index <= Coll.Count Then
-'        Coll.Remove Index
-'
-'        If Coll.Count = 0 Then
-'            Coll.Add Item
-'        ElseIf Index > Coll.Count Then
-'            Coll.Add Item, After:=Index - 1
-'        Else
-'            Coll.Add Item, Before:=Index
-'        End If
-'    End If
-'End Sub
-'
-'Private Function CollectionToArray(Coll As Collection) As Variant
-'    Dim Arr As Variant
-'    Dim i As Long
-'
-'    ' Collection is 1-based / Variant is 0-based
-'    If Coll.Count > 0 Then
-'        ReDim Arr(Coll.Count - 1)
-'        For i = 1 To Coll.Count
-'            If IsObject(Coll(i)) Then
-'                Set Arr(i - 1) = Coll(i)
-'            Else
-'                Arr(i - 1) = Coll(i)
-'            End If
-'        Next i
-'    Else
-'        Arr = Array()
-'    End If
-'
-'    CollectionToArray = Arr
-'End Function
-
 Private Sub Class_Initialize()
     Set pKeyValues = New Collection
+    Erase pKeys
+    Erase pItems
 End Sub
 
 Private Sub Class_Terminate()

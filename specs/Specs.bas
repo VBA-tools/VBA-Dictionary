@@ -1,9 +1,15 @@
 Attribute VB_Name = "Specs"
 Public Function Specs() As SpecSuite
-    InlineRunner.RunSuite RunSpecs(True)
-    InlineRunner.RunSuite RunSpecs(False)
-    
-    SpeedTest
+    #If Mac Then
+        ' Mac
+        InlineRunner.RunSuite RunSpecs(UseNative:=False)
+        SpeedTest CompareToNative:=False
+    #Else
+        ' Windows
+        InlineRunner.RunSuite RunSpecs(UseNative:=True)
+        InlineRunner.RunSuite RunSpecs(UseNative:=False)
+        SpeedTest CompareToNative:=True, UsePreciseTimer:=True
+    #End If
 End Function
 
 Public Function RunSpecs(Optional UseNative As Boolean = False) As SpecSuite
@@ -148,7 +154,7 @@ Public Function RunSpecs(Optional UseNative As Boolean = False) As SpecSuite
     With Specs.It("should get an array of all items")
         Set Dict = CreateDictionary(UseNative)
         
-        .Expect(UBound(Dict.Items)).ToEqual -1
+        .Expect(Dict.Items).RunMatcher "Specs.ToBeAnEmptyArray", "to be an empty array"
         
         Dict.Add "A", 123
         Dict.Add "B", 3.14
@@ -159,12 +165,18 @@ Public Function RunSpecs(Optional UseNative As Boolean = False) As SpecSuite
         .Expect(UBound(Items)).ToEqual 3
         .Expect(Items(0)).ToEqual 123
         .Expect(Items(3)).ToEqual True
+        
+        Dict.Remove "A"
+        Dict.Remove "B"
+        Dict.Remove "C"
+        Dict.Remove "D"
+        .Expect(Dict.Items).RunMatcher "Specs.ToBeAnEmptyArray", "to be an empty array"
     End With
     
     With Specs.It("should get an array of all keys")
         Set Dict = CreateDictionary(UseNative)
         
-        .Expect(UBound(Dict.Keys)).ToEqual -1
+        .Expect(Dict.Keys).RunMatcher "Specs.ToBeAnEmptyArray", "to be an empty array"
         
         Dict.Add "A", 123
         Dict.Add "B", 3.14
@@ -175,6 +187,9 @@ Public Function RunSpecs(Optional UseNative As Boolean = False) As SpecSuite
         .Expect(UBound(Keys)).ToEqual 3
         .Expect(Keys(0)).ToEqual "A"
         .Expect(Keys(3)).ToEqual "D"
+        
+        Dict.RemoveAll
+        .Expect(Dict.Keys).RunMatcher "Specs.ToBeAnEmptyArray", "to be an empty array"
     End With
     
     With Specs.It("should remove item")
@@ -248,86 +263,171 @@ Public Function RunSpecs(Optional UseNative As Boolean = False) As SpecSuite
     Set RunSpecs = Specs
 End Function
 
-Public Sub SpeedTest()
-    Dim NativeResults(3) As Variant
-    Dim NonNativeResults(3) As Variant
+Public Sub SpeedTest(Optional CompareToNative As Boolean = False, Optional UsePreciseTimer As Boolean = False)
+    Dim Counts As Variant
+    Counts = Array(5000, 5000, 5000, 5000, 7500, 7500, 7500, 7500)
     
-    NativeResults(0) = RunSpeedTest(100, True)
-    NativeResults(1) = RunSpeedTest(250, True)
-    NativeResults(2) = RunSpeedTest(500, True)
-    NativeResults(3) = RunSpeedTest(1000, True)
-    
-    NonNativeResults(0) = RunSpeedTest(100, False)
-    NonNativeResults(1) = RunSpeedTest(250, False)
-    NonNativeResults(2) = RunSpeedTest(500, False)
-    NonNativeResults(3) = RunSpeedTest(1000, False)
-    
-    Debug.Print vbNewLine & "SpeedTest Results - Scripting.Dictionary vs. VBA-Dictionary" & vbNewLine
-    PrintResults "Add", NativeResults, NonNativeResults, 1
-    PrintResults "Iterate", NativeResults, NonNativeResults, 2
-End Sub
-
-Public Function PrintResults(Test As String, Before As Variant, After As Variant, Index As Integer) As String
-    Dim BeforeAvg As Double
-    Dim AfterAvg As Double
-    Dim i As Integer
-    For i = LBound(Before) To UBound(Before)
-        BeforeAvg = BeforeAvg + Before(i)(0) / (CDbl(Before(i)(Index)) / 1000)
-        AfterAvg = AfterAvg + After(i)(0) / (CDbl(After(i)(Index)) / 1000)
-    Next i
-    
-    BeforeAvg = BeforeAvg / (UBound(Before) + 1)
-    AfterAvg = AfterAvg / (UBound(After) + 1)
-
-    Dim Results As String
-    Results = Test & ": " & Format(BeforeAvg, "#,##0") & " ops./s vs. " & Format(AfterAvg, "#,##0") & " ops./s, "
-    
-    If AfterAvg <= BeforeAvg Then
-        Results = Results & Format(BeforeAvg / AfterAvg, "#,##0") & "x slower"
-    Else
-        Results = Results & Format(AfterAvg / BeforeAvg, "#,##0") & "x faster"
+    Dim Baseline As Collection
+    If CompareToNative Then
+        Set Baseline = RunSpeedTest(Counts, True, UsePreciseTimer)
     End If
     
-    Debug.Print Results
-    For i = LBound(Before) To UBound(Before)
-        Debug.Print "  " & Format(Before(i)(0) / (Before(i)(Index) / 1000), "#,##0") & " vs. " & Format(After(i)(0) / (After(i)(Index) / 1000), "#,##0")
-    Next i
-    Debug.Print ""
-End Function
+    Dim Results As Collection
+    Set Results = RunSpeedTest(Counts, False, UsePreciseTimer)
+    
+    Debug.Print vbNewLine & "SpeedTest Results:" & vbNewLine
+    PrintResults "Add", Baseline, Results, 0
+    PrintResults "Iterate", Baseline, Results, 1
+End Sub
 
-Public Function RunSpeedTest(Optional Count As Long = 1000, Optional UseNative As Boolean = False) As Variant
-    Dim Dict As Object
-    Set Dict = CreateDictionary(UseNative)
+Public Sub PrintResults(Test As String, Baseline As Collection, Results As Collection, Index As Integer)
+    Dim BaselineAvg As Single
+    Dim ResultsAvg As Single
+    Dim i As Integer
     
-    Dim Timer As New PreciseTimer
-    Timer.StartCounter
+    If Not Baseline Is Nothing Then
+        For i = 1 To Baseline.Count
+            BaselineAvg = BaselineAvg + Baseline(i)(Index)
+        Next i
+        BaselineAvg = BaselineAvg / Baseline.Count
+    End If
     
-    Dim i As Long
-    For i = 1 To Count
-        Dict.Add CStr(i), i
+    For i = 1 To Results.Count
+        ResultsAvg = ResultsAvg + Results(i)(Index)
     Next i
+    ResultsAvg = ResultsAvg / Results.Count
     
-    Dim AddResult As Double
-    AddResult = Timer.TimeElapsed
+    Dim Result As String
+    Result = Test & ": " & Format(Round(ResultsAvg, 0), "#,##0") & " ops./s"
     
-    Timer.StartCounter
+    If Not Baseline Is Nothing Then
+        Result = Result & " vs. " & Format(Round(BaselineAvg, 0), "#,##0") & " ops./s "
     
+        If ResultsAvg < BaselineAvg Then
+            Result = Result & Format(Round(BaselineAvg / ResultsAvg, 0), "#,##0") & "x slower"
+        ElseIf BaselineAvg > ResultsAvg Then
+            Result = Result & Format(Round(ResultsAvg / BaselineAvg, 0), "#,##0") & "x faster"
+        End If
+    End If
+    Result = Result
+    
+    If Results.Count > 1 Then
+        Result = Result & vbNewLine
+        For i = 1 To Results.Count
+            Result = Result & "  " & Format(Round(Results(i)(Index), 0), "#,##0")
+            
+            If Not Baseline Is Nothing Then
+                Result = Result & " vs. " & Format(Round(Baseline(i)(Index), 0), "#,##0")
+            End If
+            
+            Result = Result & vbNewLine
+        Next i
+    End If
+    
+    Debug.Print Result
+End Sub
+
+Public Function RunSpeedTest(Counts As Variant, Optional UseNative As Boolean = False, Optional UsePreciseTimer As Boolean = False) As Collection
+    Dim Results As New Collection
+    Dim CountIndex As Integer
+    Dim Dict As Object
+    Dim StartTime As Single
+    Dim i As Long
+    Dim AddResult As Single
     Dim Key As Variant
     Dim Value As Variant
-    For Each Key In Dict.Keys
-        Value = Dict.Item(Key)
-    Next Key
+    Dim IterateResult As Single
     
-    Dim IterateResult As Double
-    IterateResult = Timer.TimeElapsed
+    For CountIndex = LBound(Counts) To UBound(Counts)
+        Set Dict = CreateDictionary(UseNative)
+        
+        If UsePreciseTimer Then
+            Dim Timer As New PreciseTimer
+            Timer.StartTimer
+        Else
+            StartTime = VBA.Timer
+        End If
+        
+        For i = 1 To Counts(CountIndex)
+            Dict.Add CStr(i), i
+        Next i
+        
+        If UsePreciseTimer Then
+            AddResult = CSng(Timer.TimeElapsed / 1000)
+        Else
+            AddResult = VBA.Timer - StartTime
+        End If
+        
+        ' Convert to ops./s
+        If AddResult > 0 Then
+            AddResult = Counts(CountIndex) / AddResult
+        Else
+            ' Due to single precision, timer resolution is 0.01 ms, set to 0.005 ms
+            AddResult = Counts(CountIndex) / 0.005
+        End If
+        
+        If UsePreciseTimer Then
+            Timer.StartTimer
+        Else
+            StartTime = VBA.Timer
+        End If
+        
+        For Each Key In Dict.Keys
+            Value = Dict.Item(Key)
+        Next Key
+        
+        If UsePreciseTimer Then
+            IterateResult = CSng(Timer.TimeElapsed / 1000)
+        Else
+            IterateResult = VBA.Timer - StartTime
+        End If
+        
+        ' Convert to ops./s
+        If IterateResult > 0 Then
+            IterateResult = Counts(CountIndex) / IterateResult
+        Else
+            ' Due to single precision, timer resolution is 0.01 ms, set to 0.005 ms
+            IterateResult = Counts(CountIndex) / 0.005
+        End If
+        
+        Results.Add Array(AddResult, IterateResult)
+    Next CountIndex
     
-    RunSpeedTest = Array(Count, AddResult, IterateResult)
+    Set RunSpeedTest = Results
 End Function
 
 Public Function CreateDictionary(Optional UseNative As Boolean = False) As Object
     If UseNative Then
-        Set CreateDictionary = New Scripting.Dictionary
+        Set CreateDictionary = CreateObject("Scripting.Dictionary")
     Else
-        Set CreateDictionary = New VBAProject.Dictionary
+        Set CreateDictionary = New Dictionary
+    End If
+End Function
+
+Public Function ToBeAnEmptyArray(Actual As Variant) As Variant
+    Dim UpperBound As Long
+
+    Err.Clear
+    On Error Resume Next
+    
+    ' First, make sure it's an array
+    If IsArray(Actual) = False Then
+        ' we weren't passed an array, return True
+        ToBeAnEmptyArray = True
+    Else
+        ' Attempt to get the UBound of the array. If the array is
+        ' unallocated, an error will occur.
+        UpperBound = UBound(Actual, 1)
+        If (Err.Number <> 0) Then
+            ToBeAnEmptyArray = True
+        Else
+            ' Check for case of -1 UpperBound (Scripting.Dictionary.Keys/Items)
+            Err.Clear
+            If LBound(Actual) > UpperBound Then
+                ToBeAnEmptyArray = True
+            Else
+                ToBeAnEmptyArray = False
+            End If
+        End If
     End If
 End Function
