@@ -40,16 +40,13 @@ Dict.RemoveAll
 
 Dict.Exists "A" ' -> False
 Dict("C") ' -> Empty
-UBound(Dict.Keys) ' -> -1
-UBound(Dict.Items) ' -> -1
 ```
 
 ### Release Notes
 
 #### 1.0.0
 
-- Complete replacement for `Scripting.Dictionary`
-- __1.0.1__ Allow Variant keys and handle empty Dictionary
-- __1.0.2__ Fix replace with single item in Dictionary
-- __1.0.3__ Documentation fixes
-- __1.0.4__ Big performance improvements
+Initial release of VBA-Dictionary
+
+- Exactly matches `Scripting.Dictionary` behavior (Methods/Properties, return types, errors thrown, etc.)
+- Windows and Mac support (tested in Excel 2013 32-bit Windows and Excel 2011 Mac)
