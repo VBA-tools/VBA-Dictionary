@@ -25,15 +25,18 @@ Dict("B")("Inner") ' -> "Value"
 UBound(Dict.Keys) ' -> 1
 UBound(Dict.Items) ' -> 1
 
+' Rename key
 Dict.Key("B") = "C"
 Dict.Exists "B" ' -> False
 Dict("C")("Inner") ' -> "Value"
 
-Dict.CompareMode = CompareMethods.BinaryCompare
-' -> Throws 5 (Can't change CompareMode when there are items in the Dictionary)
-
+' Trying to remove non-existant key throws 32811
 Dict.Remove "B"
 ' -> Throws 32811: Application-defined or object-defined error
+
+' Trying to change CompareMode when there are items in the Dictionary throws 5
+Dict.CompareMode = CompareMethods.BinaryCompare
+' -> Throws 5: Invalid procedure call or argument
 
 Dict.Remove "A"
 Dict.RemoveAll
