@@ -260,6 +260,55 @@ Public Function RunSpecs(Optional UseNative As Boolean = False) As SpecSuite
         .Expect(Items(4)).ToEqual True
     End With
     
+    ' Errors
+    ' ------------------------- '
+    On Error Resume Next
+    With Specs.It("should throw 5 when changing CompareMode with items in Dictionary")
+        Set Dict = CreateDictionary(UseNative)
+        Dict.Add "A", 123
+        
+        Dict.CompareMode = vbTextCompare
+        
+        .Expect(Err.Number).ToEqual 5
+        Err.Clear
+    End With
+    
+    With Specs.It("should throw 457 on Add if key exists")
+        Set Dict = CreateDictionary(UseNative)
+        
+        Dict.Add "A", 123
+        Dict.Add "A", 456
+        
+        .Expect(Err.Number).ToEqual 457
+        Err.Clear
+        
+        Dict.RemoveAll
+        Dict.Add "A", 123
+        Dict.Add "a", 456
+        
+        .Expect(Err.Number).ToEqual 0
+        Err.Clear
+        
+        Dict.RemoveAll
+        Dict.CompareMode = vbTextCompare
+        Dict.Add "A", 123
+        Dict.Add "a", 456
+        
+        .Expect(Err.Number).ToEqual 457
+        Err.Clear
+    End With
+    
+    With Specs.It("should throw 32811 on Remove if key doesn't exist")
+        Set Dict = CreateDictionary(UseNative)
+        
+        Dict.Remove "A"
+        
+        .Expect(Err.Number).ToEqual 32811
+        Err.Clear
+    End With
+    
+    On Error GoTo 0
+    
     Set RunSpecs = Specs
 End Function
 
