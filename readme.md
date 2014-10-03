@@ -47,6 +47,10 @@ Dict("C") ' -> Empty
 
 ### Release Notes
 
+#### 1.1.0
+
+- Use compiler statements to use Scripting.Dictionary internally if available (improves Windows performance by ~3x)
+
 #### 1.0.0
 
 Initial release of VBA-Dictionary
