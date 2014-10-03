@@ -247,6 +247,7 @@ End Sub
 Private Function GetKeyValue(Key As Variant) As Variant
     On Error Resume Next
     GetKeyValue = pKeyValues(GetFormattedKey(Key))
+    Err.Clear
 End Function
 
 Private Sub AddKeyValue(Key As Variant, Value As Variant, Optional Index As Long = -1)
