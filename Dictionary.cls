@@ -8,7 +8,7 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = True
 ''
-' Dictionary v1.0.0
+' Dictionary v1.1.0
 ' (c) Tim Hall - https://github.com/timhall/VBA-Dictionary
 '
 ' Drop-in replacement for Scripting.Dictionary on Mac
@@ -23,11 +23,21 @@ Option Explicit
 ' Constants and Private Variables
 ' --------------------------------------------- '
 
-' KeyValue 0: Key, 1: Value
+#Const UseScriptingDictionaryIfAvailable = True
+
+#If Mac Or Not UseScriptingDictionaryIfAvailable Then
+
+' KeyValue 0: FormattedKey, 1: OriginalKey, 2: Value
 Private pKeyValues As Collection
 Private pKeys() As Variant
 Private pItems() As Variant
 Private pCompareMode As CompareMethod
+
+#Else
+
+Private pDictionary As Object
+
+#End If
 
 ' --------------------------------------------- '
 ' Types
@@ -44,9 +54,14 @@ End Enum
 ' --------------------------------------------- '
 
 Public Property Get CompareMode() As CompareMethod
+#If Mac Or Not UseScriptingDictionaryIfAvailable Then
     CompareMode = pCompareMode
+#Else
+    CompareMode = pDictionary.CompareMode
+#End If
 End Property
 Public Property Let CompareMode(Value As CompareMethod)
+#If Mac Or Not UseScriptingDictionaryIfAvailable Then
     If Me.Count > 0 Then
         ' Can't change CompareMode for Dictionary that contains data
         ' http://msdn.microsoft.com/en-us/library/office/gg278481(v=office.15).aspx
@@ -54,14 +69,22 @@ Public Property Let CompareMode(Value As CompareMethod)
     End If
     
     pCompareMode = Value
+#Else
+    pDictionary.CompareMode = Value
+#End If
 End Property
 
 Public Property Get Count() As Long
+#If Mac Or Not UseScriptingDictionaryIfAvailable Then
     Count = pKeyValues.Count
+#Else
+    Count = pDictionary.Count
+#End If
 End Property
 
 Public Property Get Item(Key As Variant) As Variant
 Attribute Item.VB_UserMemId = 0
+#If Mac Or Not UseScriptingDictionaryIfAvailable Then
     Dim KeyValue As Variant
     KeyValue = GetKeyValue(Key)
     
@@ -74,29 +97,48 @@ Attribute Item.VB_UserMemId = 0
     Else
         ' Not found -> Returns Empty
     End If
+#Else
+    If IsObject(pDictionary.Item(Key)) Then
+        Set Item = pDictionary.Item(Key)
+    Else
+        Item = pDictionary.Item(Key)
+    End If
+#End If
 End Property
 Public Property Let Item(Key As Variant, Value As Variant)
+#If Mac Or Not UseScriptingDictionaryIfAvailable Then
     If Me.Exists(Key) Then
         ReplaceKeyValue GetKeyValue(Key), Key, Value
     Else
         AddKeyValue Key, Value
     End If
+#Else
+    pDictionary.Item(Key) = Value
+#End If
 End Property
 Public Property Set Item(Key As Variant, Value As Variant)
+#If Mac Or Not UseScriptingDictionaryIfAvailable Then
     If Me.Exists(Key) Then
         ReplaceKeyValue GetKeyValue(Key), Key, Value
     Else
         AddKeyValue Key, Value
     End If
+#Else
+    Set pDictionary.Item(Key) = Value
+#End If
 End Property
 
 Public Property Let Key(Previous As Variant, Updated As Variant)
+#If Mac Or Not UseScriptingDictionaryIfAvailable Then
     Dim KeyValue As Variant
     KeyValue = GetKeyValue(Previous)
     
     If Not IsEmpty(KeyValue) Then
         ReplaceKeyValue KeyValue, Updated, KeyValue(2)
     End If
+#Else
+    pDictionary.Key(Previous) = Updated
+#End If
 End Property
 
 ' ============================================= '
@@ -110,12 +152,16 @@ End Property
 ' @param {Variant} Item
 ' --------------------------------------------- '
 Public Sub Add(Key As Variant, Item As Variant)
+#If Mac Or Not UseScriptingDictionaryIfAvailable Then
     If Not Me.Exists(Key) Then
         AddKeyValue Key, Item
     Else
         ' This key is already associated with an element of this collection
         Err.Raise 457
     End If
+#Else
+    pDictionary.Add Key, Item
+#End If
 End Sub
 
 ''
@@ -125,7 +171,11 @@ End Sub
 ' @return {Boolean}
 ' --------------------------------------------- '
 Public Function Exists(Key As Variant) As Boolean
+#If Mac Or Not UseScriptingDictionaryIfAvailable Then
     Exists = Not IsEmpty(GetKeyValue(Key))
+#Else
+    Exists = pDictionary.Exists(Key)
+#End If
 End Function
 
 ''
@@ -134,7 +184,11 @@ End Function
 ' @return {Variant}
 ' --------------------------------------------- '
 Public Function Items() As Variant
+#If Mac Or Not UseScriptingDictionaryIfAvailable Then
     Items = pItems
+#Else
+    Items = pDictionary.Items
+#End If
 End Function
 
 ''
@@ -143,7 +197,11 @@ End Function
 ' @return {Variant}
 ' --------------------------------------------- '
 Public Function Keys() As Variant
+#If Mac Or Not UseScriptingDictionaryIfAvailable Then
     Keys = pKeys
+#Else
+    Keys = pDictionary.Keys
+#End If
 End Function
 
 ''
@@ -152,6 +210,7 @@ End Function
 ' @param {Variant} Key
 ' --------------------------------------------- '
 Public Sub Remove(Key As Variant)
+#If Mac Or Not UseScriptingDictionaryIfAvailable Then
     Dim KeyValue As Variant
     KeyValue = GetKeyValue(Key)
     
@@ -161,24 +220,34 @@ Public Sub Remove(Key As Variant)
         ' Application-defined or object-defined error
         Err.Raise 32811
     End If
+#Else
+    pDictionary.Remove Key
+#End If
 End Sub
 
 ''
 ' Remove all items
 ' --------------------------------------------- '
 Public Sub RemoveAll()
+#If Mac Or Not UseScriptingDictionaryIfAvailable Then
     Set pKeyValues = New Collection
     Erase pKeys
     Erase pItems
+#Else
+    pDictionary.RemoveAll
+#End If
 End Sub
 
 ' ============================================= '
 ' Private Functions
 ' ============================================= '
 
+#If Mac Or Not UseScriptingDictionaryIfAvailable Then
+
 Private Function GetKeyValue(Key As Variant) As Variant
     On Error Resume Next
     GetKeyValue = pKeyValues(GetFormattedKey(Key))
+    Err.Clear
 End Function
 
 Private Sub AddKeyValue(Key As Variant, Value As Variant, Optional Index As Long = -1)
@@ -306,12 +375,22 @@ Private Function GetFormattedKey(Key As Variant) As String
     End If
 End Function
 
+#End If
+
 Private Sub Class_Initialize()
+#If Mac Or Not UseScriptingDictionaryIfAvailable Then
     Set pKeyValues = New Collection
     Erase pKeys
     Erase pItems
+#Else
+    Set pDictionary = CreateObject("Scripting.Dictionary")
+#End If
 End Sub
 
 Private Sub Class_Terminate()
+#If Mac Or Not UseScriptingDictionaryIfAvailable Then
     Set pKeyValues = Nothing
+#Else
+    Set pDictionary = Nothing
+#End If
 End Sub
