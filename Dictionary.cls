@@ -8,7 +8,7 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = True
 ''
-' Dictionary v1.1.0
+' Dictionary v1.1.1
 ' (c) Tim Hall - https://github.com/timhall/VBA-Dictionary
 '
 ' Drop-in replacement for Scripting.Dictionary on Mac
@@ -363,7 +363,7 @@ Private Function GetFormattedKey(Key As Variant) As String
         Dim Char As String
         For i = 1 To Len(GetFormattedKey)
             Char = VBA.Mid$(GetFormattedKey, i, 1)
-            Ascii = Asc(Char)
+            Ascii = asc(Char)
             If Ascii >= 97 And Ascii <= 122 Then
                 Lowercase = Lowercase & Char
             End If

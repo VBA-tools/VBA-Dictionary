@@ -50,6 +50,7 @@ Dict("C") ' -> Empty
 #### 1.1.0
 
 - Use compiler statements to use Scripting.Dictionary internally if available (improves Windows performance by ~3x)
+- __1.1.1__ Make VBA-Dictionary instancing Public Not Creatable
 
 #### 1.0.0
 
