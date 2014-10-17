@@ -8,7 +8,7 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = True
 ''
-' Dictionary v1.1.1
+' Dictionary v1.2.0
 ' (c) Tim Hall - https://github.com/timhall/VBA-Dictionary
 '
 ' Drop-in replacement for Scripting.Dictionary on Mac
@@ -23,7 +23,7 @@ Option Explicit
 ' Constants and Private Variables
 ' --------------------------------------------- '
 
-#Const UseScriptingDictionaryIfAvailable = False
+#Const UseScriptingDictionaryIfAvailable = True
 
 #If Mac Or Not UseScriptingDictionaryIfAvailable Then
 
