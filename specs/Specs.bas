@@ -8,7 +8,7 @@ Public Function Specs() As SpecSuite
         ' Windows
         InlineRunner.RunSuite RunSpecs(UseNative:=True)
         InlineRunner.RunSuite RunSpecs(UseNative:=False)
-        SpeedTest CompareToNative:=True, UsePreciseTimer:=True
+        SpeedTest CompareToNative:=True
     #End If
 End Function
 
@@ -25,6 +25,8 @@ Public Function RunSpecs(Optional UseNative As Boolean = False) As SpecSuite
     Dim Keys As Variant
     Dim Key As Variant
     Dim Item As Variant
+    
+    On Error Resume Next
     
     ' Properties
     ' ------------------------- '
@@ -227,6 +229,13 @@ Public Function RunSpecs(Optional UseNative As Boolean = False) As SpecSuite
     With Specs.It("should For Each over keys")
         Set Dict = CreateDictionary(UseNative)
         
+        Set Keys = New Collection
+        For Each Key In Dict.Keys
+            Keys.Add Key
+        Next Key
+        
+        .Expect(Keys.Count).ToEqual 0
+        
         Dict.Add "A", 123
         Dict.Add "B", 3.14
         Dict.Add "C", "ABC"
@@ -240,10 +249,18 @@ Public Function RunSpecs(Optional UseNative As Boolean = False) As SpecSuite
         .Expect(Keys.Count).ToEqual 4
         .Expect(Keys(1)).ToEqual "A"
         .Expect(Keys(4)).ToEqual "D"
+        Err.Clear
     End With
     
     With Specs.It("should For Each over items")
         Set Dict = CreateDictionary(UseNative)
+        
+        Set Items = New Collection
+        For Each Item In Dict.Items
+            Items.Add Item
+        Next Item
+        
+        .Expect(Items.Count).ToEqual 0
         
         Dict.Add "A", 123
         Dict.Add "B", 3.14
@@ -258,11 +275,21 @@ Public Function RunSpecs(Optional UseNative As Boolean = False) As SpecSuite
         .Expect(Items.Count).ToEqual 4
         .Expect(Items(1)).ToEqual 123
         .Expect(Items(4)).ToEqual True
+        Err.Clear
+    End With
+    
+    With Specs.It("should have UBound of -1 for empty Keys and Items")
+        Set Dict = CreateDictionary(UseNative)
+        
+        .Expect(UBound(Dict.Keys)).ToEqual -1
+        .Expect(UBound(Dict.Items)).ToEqual -1
+        .Expect(Err.Number).ToEqual 0
+        Err.Clear
     End With
     
     ' Errors
     ' ------------------------- '
-    On Error Resume Next
+    Err.Clear
     With Specs.It("should throw 5 when changing CompareMode with items in Dictionary")
         Set Dict = CreateDictionary(UseNative)
         Dict.Add "A", 123
@@ -312,17 +339,17 @@ Public Function RunSpecs(Optional UseNative As Boolean = False) As SpecSuite
     Set RunSpecs = Specs
 End Function
 
-Public Sub SpeedTest(Optional CompareToNative As Boolean = False, Optional UsePreciseTimer As Boolean = False)
+Public Sub SpeedTest(Optional CompareToNative As Boolean = False)
     Dim Counts As Variant
     Counts = Array(5000, 5000, 5000, 5000, 7500, 7500, 7500, 7500)
     
     Dim Baseline As Collection
     If CompareToNative Then
-        Set Baseline = RunSpeedTest(Counts, True, UsePreciseTimer)
+        Set Baseline = RunSpeedTest(Counts, True)
     End If
     
     Dim Results As Collection
-    Set Results = RunSpeedTest(Counts, False, UsePreciseTimer)
+    Set Results = RunSpeedTest(Counts, False)
     
     Debug.Print vbNewLine & "SpeedTest Results:" & vbNewLine
     PrintResults "Add", Baseline, Results, 0
@@ -376,36 +403,27 @@ Public Sub PrintResults(Test As String, Baseline As Collection, Results As Colle
     Debug.Print Result
 End Sub
 
-Public Function RunSpeedTest(Counts As Variant, Optional UseNative As Boolean = False, Optional UsePreciseTimer As Boolean = False) As Collection
+Public Function RunSpeedTest(Counts As Variant, Optional UseNative As Boolean = False) As Collection
     Dim Results As New Collection
     Dim CountIndex As Integer
     Dim Dict As Object
-    Dim StartTime As Single
     Dim i As Long
-    Dim AddResult As Single
+    Dim AddResult As Double
     Dim Key As Variant
     Dim Value As Variant
-    Dim IterateResult As Single
+    Dim IterateResult As Double
+    Dim Timer As New PreciseTimer
     
     For CountIndex = LBound(Counts) To UBound(Counts)
+        Timer.StartTimer
+    
         Set Dict = CreateDictionary(UseNative)
-        
-        If UsePreciseTimer Then
-            Dim Timer As New PreciseTimer
-            Timer.StartTimer
-        Else
-            StartTime = VBA.Timer
-        End If
-        
         For i = 1 To Counts(CountIndex)
             Dict.Add CStr(i), i
         Next i
         
-        If UsePreciseTimer Then
-            AddResult = CSng(Timer.TimeElapsed / 1000)
-        Else
-            AddResult = VBA.Timer - StartTime
-        End If
+        ' Convert to seconds
+        AddResult = Timer.TimeElapsed / 1000#
         
         ' Convert to ops./s
         If AddResult > 0 Then
@@ -415,21 +433,14 @@ Public Function RunSpeedTest(Counts As Variant, Optional UseNative As Boolean = 
             AddResult = Counts(CountIndex) / 0.005
         End If
         
-        If UsePreciseTimer Then
-            Timer.StartTimer
-        Else
-            StartTime = VBA.Timer
-        End If
+        Timer.StartTimer
         
         For Each Key In Dict.Keys
             Value = Dict.Item(Key)
         Next Key
         
-        If UsePreciseTimer Then
-            IterateResult = CSng(Timer.TimeElapsed / 1000)
-        Else
-            IterateResult = VBA.Timer - StartTime
-        End If
+        ' Convert to seconds
+        IterateResult = Timer.TimeElapsed / 1000#
         
         ' Convert to ops./s
         If IterateResult > 0 Then
