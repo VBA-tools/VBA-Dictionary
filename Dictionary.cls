@@ -8,7 +8,7 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = True
 ''
-' Dictionary v1.1.1
+' Dictionary v1.2.0
 ' (c) Tim Hall - https://github.com/timhall/VBA-Dictionary
 '
 ' Drop-in replacement for Scripting.Dictionary on Mac
@@ -185,7 +185,12 @@ End Function
 ' --------------------------------------------- '
 Public Function Items() As Variant
 #If Mac Or Not UseScriptingDictionaryIfAvailable Then
-    Items = pItems
+    If Me.Count > 0 Then
+        Items = pItems
+    Else
+        ' Split("") creates initialized empty array that matches Dictionary Keys and Items
+        Items = Split("")
+    End If
 #Else
     Items = pDictionary.Items
 #End If
@@ -198,7 +203,12 @@ End Function
 ' --------------------------------------------- '
 Public Function Keys() As Variant
 #If Mac Or Not UseScriptingDictionaryIfAvailable Then
-    Keys = pKeys
+    If Me.Count > 0 Then
+        Keys = pKeys
+    Else
+        ' Split("") creates initialized empty array that matches Dictionary Keys and Items
+        Keys = Split("")
+    End If
 #Else
     Keys = pDictionary.Keys
 #End If
@@ -231,6 +241,7 @@ End Sub
 Public Sub RemoveAll()
 #If Mac Or Not UseScriptingDictionaryIfAvailable Then
     Set pKeyValues = New Collection
+    
     Erase pKeys
     Erase pItems
 #Else
@@ -252,8 +263,8 @@ End Function
 
 Private Sub AddKeyValue(Key As Variant, Value As Variant, Optional Index As Long = -1)
     If Me.Count = 0 Then
-        ReDim Preserve pKeys(0 To 0)
-        ReDim Preserve pItems(0 To 0)
+        ReDim pKeys(0 To 0)
+        ReDim pItems(0 To 0)
     Else
         ReDim Preserve pKeys(0 To UBound(pKeys) + 1)
         ReDim Preserve pItems(0 To UBound(pItems) + 1)
@@ -363,7 +374,7 @@ Private Function GetFormattedKey(Key As Variant) As String
         Dim Char As String
         For i = 1 To Len(GetFormattedKey)
             Char = VBA.Mid$(GetFormattedKey, i, 1)
-            Ascii = asc(Char)
+            Ascii = Asc(Char)
             If Ascii >= 97 And Ascii <= 122 Then
                 Lowercase = Lowercase & Char
             End If
@@ -380,6 +391,7 @@ End Function
 Private Sub Class_Initialize()
 #If Mac Or Not UseScriptingDictionaryIfAvailable Then
     Set pKeyValues = New Collection
+    
     Erase pKeys
     Erase pItems
 #Else
