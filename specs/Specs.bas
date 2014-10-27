@@ -2,17 +2,26 @@ Attribute VB_Name = "Specs"
 Public Function Specs() As SpecSuite
     #If Mac Then
         ' Mac
-        InlineRunner.RunSuite RunSpecs(UseNative:=False)
+        InlineRunner.RunSuite AllSpecs(UseNative:=False)
         SpeedTest CompareToNative:=False
     #Else
         ' Windows
-        InlineRunner.RunSuite RunSpecs(UseNative:=True)
-        InlineRunner.RunSuite RunSpecs(UseNative:=False)
+        InlineRunner.RunSuite AllSpecs(UseNative:=True)
+        InlineRunner.RunSuite AllSpecs(UseNative:=False)
         SpeedTest CompareToNative:=True
     #End If
 End Function
 
-Public Function RunSpecs(Optional UseNative As Boolean = False) As SpecSuite
+Public Sub RunSpecs()
+    DisplayRunner.IdCol = 1
+    DisplayRunner.DescCol = 1
+    DisplayRunner.ResultCol = 2
+    DisplayRunner.OutputStartRow = 4
+    
+    DisplayRunner.RunSuite AllSpecs(UseNative:=False)
+End Sub
+
+Public Function AllSpecs(Optional UseNative As Boolean = False) As SpecSuite
     Dim Specs As New SpecSuite
     If UseNative Then
         Specs.Description = "Scripting.Dictionary"
@@ -336,7 +345,7 @@ Public Function RunSpecs(Optional UseNative As Boolean = False) As SpecSuite
     
     On Error GoTo 0
     
-    Set RunSpecs = Specs
+    Set AllSpecs = Specs
 End Function
 
 Public Sub SpeedTest(Optional CompareToNative As Boolean = False)
