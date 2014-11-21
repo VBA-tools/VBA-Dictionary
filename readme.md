@@ -4,7 +4,7 @@ VBA-Dictionary is a drop-in replacement for the useful and powerful `Scripting.D
 
 ## Example
 
-```VB
+```VB.net
 ' (Works exactly like Scripting.Dictionary)
 Dim Dict As New Dictionary
 Dict.CompareMode = CompareMethods.TextCompare
