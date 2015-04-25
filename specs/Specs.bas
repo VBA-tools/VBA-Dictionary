@@ -35,8 +35,6 @@ Public Function AllSpecs(Optional UseNative As Boolean = False) As SpecSuite
     Dim Key As Variant
     Dim Item As Variant
     
-    On Error Resume Next
-    
     ' Properties
     ' ------------------------- '
     With Specs.It("should get count of items")
@@ -132,6 +130,62 @@ Public Function AllSpecs(Optional UseNative As Boolean = False) As SpecSuite
         Key = "B"
         Set Dict(Key) = CreateDictionary(UseNative)
         .Expect(Dict(Key).Count).ToEqual 0
+    End With
+    
+    With Specs.It("should handle numeric keys")
+        Set Dict = CreateDictionary(UseNative)
+        
+        Dict.Add 3, 1
+        Dict.Add 2, 2
+        Dict.Add 1, 3
+        Dict.Add "3", 4
+        Dict.Add "2", 5
+        Dict.Add "1", 6
+
+        .Expect(Dict(3)).ToEqual 1
+        .Expect(Dict(2)).ToEqual 2
+        .Expect(Dict(1)).ToEqual 3
+        .Expect(Dict("3")).ToEqual 4
+        .Expect(Dict("2")).ToEqual 5
+        .Expect(Dict("1")).ToEqual 6
+        
+        .Expect(Dict.Keys()(0)).ToEqual 3
+        .Expect(Dict.Keys()(1)).ToEqual 2
+        .Expect(Dict.Keys()(2)).ToEqual 1
+        .Expect(TypeName(Dict.Keys()(0))).ToEqual "Integer"
+        .Expect(TypeName(Dict.Keys()(1))).ToEqual "Integer"
+        .Expect(TypeName(Dict.Keys()(2))).ToEqual "Integer"
+    End With
+    
+    With Specs.It("should handle boolean keys")
+        Set Dict = CreateDictionary(UseNative)
+        
+        Dict.Add True, 1
+        Dict.Add False, 2
+        
+        .Expect(Dict(True)).ToEqual 1
+        .Expect(Dict(False)).ToEqual 2
+        
+        .Expect(Dict.Keys()(0)).ToEqual True
+        .Expect(Dict.Keys()(1)).ToEqual False
+        .Expect(TypeName(Dict.Keys()(0))).ToEqual "Boolean"
+        .Expect(TypeName(Dict.Keys()(1))).ToEqual "Boolean"
+    End With
+    
+    With Specs.It("should handle object keys")
+        Set Dict = CreateDictionary(UseNative)
+        
+        Dim A As New Collection
+        A.Add 123
+        
+        Dim B As New Dictionary
+        B.Add "a", 456
+        
+        Dict.Add A, "123"
+        Dict.Add B, "456"
+        
+        .Expect(Dict(A)).ToEqual "123"
+        .Expect(Dict(B)).ToEqual "456"
     End With
     
     ' Methods
@@ -258,7 +312,6 @@ Public Function AllSpecs(Optional UseNative As Boolean = False) As SpecSuite
         .Expect(Keys.Count).ToEqual 4
         .Expect(Keys(1)).ToEqual "A"
         .Expect(Keys(4)).ToEqual "D"
-        Err.Clear
     End With
     
     With Specs.It("should For Each over items")
@@ -284,7 +337,6 @@ Public Function AllSpecs(Optional UseNative As Boolean = False) As SpecSuite
         .Expect(Items.Count).ToEqual 4
         .Expect(Items(1)).ToEqual 123
         .Expect(Items(4)).ToEqual True
-        Err.Clear
     End With
     
     With Specs.It("should have UBound of -1 for empty Keys and Items")
@@ -293,12 +345,13 @@ Public Function AllSpecs(Optional UseNative As Boolean = False) As SpecSuite
         .Expect(UBound(Dict.Keys)).ToEqual -1
         .Expect(UBound(Dict.Items)).ToEqual -1
         .Expect(Err.Number).ToEqual 0
-        Err.Clear
     End With
     
     ' Errors
     ' ------------------------- '
     Err.Clear
+    On Error Resume Next
+    
     With Specs.It("should throw 5 when changing CompareMode with items in Dictionary")
         Set Dict = CreateDictionary(UseNative)
         Dict.Add "A", 123
@@ -340,6 +393,22 @@ Public Function AllSpecs(Optional UseNative As Boolean = False) As SpecSuite
         Dict.Remove "A"
         
         .Expect(Err.Number).ToEqual 32811
+        Err.Clear
+    End With
+    
+    With Specs.It("should throw 457 for Boolean key quirks")
+        Set Dict = CreateDictionary(UseNative)
+        
+        Dict.Add True, "abc"
+        Dict.Add -1, "def"
+        
+        .Expect(Err.Number).ToEqual 457
+        Err.Clear
+        
+        Dict.Add False, "abc"
+        Dict.Add 0, "def"
+        
+        .Expect(Err.Number).ToEqual 457
         Err.Clear
     End With
     
