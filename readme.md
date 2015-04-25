@@ -47,6 +47,10 @@ Dict("C") ' -> Empty
 
 ### Release Notes
 
+#### 1.3.0
+
+- Improve handling of non-string keys (Number, Boolean, and Object)
+
 #### 1.2.0
 
 - Improve compatibility for empty Dictionary (`UBound` for empty `Keys` and `Items` is `-1` and can `For Each` over empty `Keys` and `Items`, matching `Scripting.Dictionary`)
