@@ -186,6 +186,11 @@ Public Function AllSpecs(Optional UseNative As Boolean = False) As SpecSuite
         
         .Expect(Dict(A)).ToEqual "123"
         .Expect(Dict(B)).ToEqual "456"
+        
+        Dict.Remove B
+        Dict.Key(A) = B
+        
+        .Expect(Dict(B)).ToEqual "123"
     End With
     
     ' Methods

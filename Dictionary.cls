@@ -27,16 +27,16 @@ Option Explicit
 
 #If Mac Or Not UseScriptingDictionaryIfAvailable Then
 
-' KeyValue 0: FormattedKey, 1: OriginalKey, 2: Value
-Private pKeyValues As Collection
-Private pKeys() As Variant
-Private pItems() As Variant
-Private pObjectKeys As Collection
-Private pCompareMode As CompareMethod
+' dict_KeyValue 0: FormattedKey, 1: OriginalKey, 2: Value
+Private dict_pKeyValues As Collection
+Private dict_pKeys() As Variant
+Private dict_pItems() As Variant
+Private dict_pObjectKeys As Collection
+Private dict_pCompareMode As CompareMethod
 
 #Else
 
-Private pDictionary As Object
+Private dict_pDictionary As Object
 
 #End If
 
@@ -45,9 +45,9 @@ Private pDictionary As Object
 ' --------------------------------------------- '
 
 Public Enum CompareMethod
-    BinaryCompare = vbBinaryCompare
-    TextCompare = vbTextCompare
-    DatabaseCompare = vbDatabaseCompare
+    BinaryCompare = VBA.vbBinaryCompare
+    TextCompare = VBA.vbTextCompare
+    DatabaseCompare = VBA.vbDatabaseCompare
 End Enum
 
 ' --------------------------------------------- '
@@ -56,9 +56,9 @@ End Enum
 
 Public Property Get CompareMode() As CompareMethod
 #If Mac Or Not UseScriptingDictionaryIfAvailable Then
-    CompareMode = pCompareMode
+    CompareMode = dict_pCompareMode
 #Else
-    CompareMode = pDictionary.CompareMode
+    CompareMode = dict_pDictionary.CompareMode
 #End If
 End Property
 Public Property Let CompareMode(Value As CompareMethod)
@@ -68,77 +68,77 @@ Public Property Let CompareMode(Value As CompareMethod)
         ' http://msdn.microsoft.com/en-us/library/office/gg278481(v=office.15).aspx
         Err.Raise 5 ' Invalid procedure call or argument
     End If
-    
-    pCompareMode = Value
+
+    dict_pCompareMode = Value
 #Else
-    pDictionary.CompareMode = Value
+    dict_pDictionary.CompareMode = Value
 #End If
 End Property
 
 Public Property Get Count() As Long
 #If Mac Or Not UseScriptingDictionaryIfAvailable Then
-    Count = pKeyValues.Count
+    Count = dict_pKeyValues.Count
 #Else
-    Count = pDictionary.Count
+    Count = dict_pDictionary.Count
 #End If
 End Property
 
 Public Property Get Item(Key As Variant) As Variant
 Attribute Item.VB_UserMemId = 0
 #If Mac Or Not UseScriptingDictionaryIfAvailable Then
-    Dim KeyValue As Variant
-    KeyValue = GetKeyValue(Key)
-    
-    If Not IsEmpty(KeyValue) Then
-        If IsObject(KeyValue(2)) Then
-            Set Item = KeyValue(2)
+    Dim dict_KeyValue As Variant
+    dict_KeyValue = dict_GetKeyValue(Key)
+
+    If Not IsEmpty(dict_KeyValue) Then
+        If VBA.IsObject(dict_KeyValue(2)) Then
+            Set Item = dict_KeyValue(2)
         Else
-            Item = KeyValue(2)
+            Item = dict_KeyValue(2)
         End If
     Else
         ' Not found -> Returns Empty
     End If
 #Else
-    If IsObject(pDictionary.Item(Key)) Then
-        Set Item = pDictionary.Item(Key)
+    If VBA.IsObject(dict_pDictionary.Item(Key)) Then
+        Set Item = dict_pDictionary.Item(Key)
     Else
-        Item = pDictionary.Item(Key)
+        Item = dict_pDictionary.Item(Key)
     End If
 #End If
 End Property
 Public Property Let Item(Key As Variant, Value As Variant)
 #If Mac Or Not UseScriptingDictionaryIfAvailable Then
     If Me.Exists(Key) Then
-        ReplaceKeyValue GetKeyValue(Key), Key, Value
+        dict_ReplaceKeyValue dict_GetKeyValue(Key), Key, Value
     Else
-        AddKeyValue Key, Value
+        dict_AddKeyValue Key, Value
     End If
 #Else
-    pDictionary.Item(Key) = Value
+    dict_pDictionary.Item(Key) = Value
 #End If
 End Property
 Public Property Set Item(Key As Variant, Value As Variant)
 #If Mac Or Not UseScriptingDictionaryIfAvailable Then
     If Me.Exists(Key) Then
-        ReplaceKeyValue GetKeyValue(Key), Key, Value
+        dict_ReplaceKeyValue dict_GetKeyValue(Key), Key, Value
     Else
-        AddKeyValue Key, Value
+        dict_AddKeyValue Key, Value
     End If
 #Else
-    Set pDictionary.Item(Key) = Value
+    Set dict_pDictionary.Item(Key) = Value
 #End If
 End Property
 
 Public Property Let Key(Previous As Variant, Updated As Variant)
 #If Mac Or Not UseScriptingDictionaryIfAvailable Then
-    Dim KeyValue As Variant
-    KeyValue = GetKeyValue(Previous)
-    
-    If Not IsEmpty(KeyValue) Then
-        ReplaceKeyValue KeyValue, Updated, KeyValue(2)
+    Dim dict_KeyValue As Variant
+    dict_KeyValue = dict_GetKeyValue(Previous)
+
+    If Not VBA.IsEmpty(dict_KeyValue) Then
+        dict_ReplaceKeyValue dict_KeyValue, Updated, dict_KeyValue(2)
     End If
 #Else
-    pDictionary.Key(Previous) = Updated
+    dict_pDictionary.Key(Previous) = Updated
 #End If
 End Property
 
@@ -155,13 +155,13 @@ End Property
 Public Sub Add(Key As Variant, Item As Variant)
 #If Mac Or Not UseScriptingDictionaryIfAvailable Then
     If Not Me.Exists(Key) Then
-        AddKeyValue Key, Item
+        dict_AddKeyValue Key, Item
     Else
         ' This key is already associated with an element of this collection
         Err.Raise 457
     End If
 #Else
-    pDictionary.Add Key, Item
+    dict_pDictionary.Add Key, Item
 #End If
 End Sub
 
@@ -173,9 +173,9 @@ End Sub
 ' --------------------------------------------- '
 Public Function Exists(Key As Variant) As Boolean
 #If Mac Or Not UseScriptingDictionaryIfAvailable Then
-    Exists = Not IsEmpty(GetKeyValue(Key))
+    Exists = Not IsEmpty(dict_GetKeyValue(Key))
 #Else
-    Exists = pDictionary.Exists(Key)
+    Exists = dict_pDictionary.Exists(Key)
 #End If
 End Function
 
@@ -187,13 +187,13 @@ End Function
 Public Function Items() As Variant
 #If Mac Or Not UseScriptingDictionaryIfAvailable Then
     If Me.Count > 0 Then
-        Items = pItems
+        Items = dict_pItems
     Else
         ' Split("") creates initialized empty array that matches Dictionary Keys and Items
-        Items = Split("")
+        Items = VBA.Split("")
     End If
 #Else
-    Items = pDictionary.Items
+    Items = dict_pDictionary.Items
 #End If
 End Function
 
@@ -205,13 +205,13 @@ End Function
 Public Function Keys() As Variant
 #If Mac Or Not UseScriptingDictionaryIfAvailable Then
     If Me.Count > 0 Then
-        Keys = pKeys
+        Keys = dict_pKeys
     Else
         ' Split("") creates initialized empty array that matches Dictionary Keys and Items
-        Keys = Split("")
+        Keys = VBA.Split("")
     End If
 #Else
-    Keys = pDictionary.Keys
+    Keys = dict_pDictionary.Keys
 #End If
 End Function
 
@@ -222,17 +222,17 @@ End Function
 ' --------------------------------------------- '
 Public Sub Remove(Key As Variant)
 #If Mac Or Not UseScriptingDictionaryIfAvailable Then
-    Dim KeyValue As Variant
-    KeyValue = GetKeyValue(Key)
-    
-    If Not IsEmpty(KeyValue) Then
-        RemoveKeyValue KeyValue
+    Dim dict_KeyValue As Variant
+    dict_KeyValue = dict_GetKeyValue(Key)
+
+    If Not VBA.IsEmpty(dict_KeyValue) Then
+        dict_RemoveKeyValue dict_KeyValue
     Else
         ' Application-defined or object-defined error
         Err.Raise 32811
     End If
 #Else
-    pDictionary.Remove Key
+    dict_pDictionary.Remove Key
 #End If
 End Sub
 
@@ -241,12 +241,12 @@ End Sub
 ' --------------------------------------------- '
 Public Sub RemoveAll()
 #If Mac Or Not UseScriptingDictionaryIfAvailable Then
-    Set pKeyValues = New Collection
-    
-    Erase pKeys
-    Erase pItems
+    Set dict_pKeyValues = New Collection
+
+    Erase dict_pKeys
+    Erase dict_pItems
 #Else
-    pDictionary.RemoveAll
+    dict_pDictionary.RemoveAll
 #End If
 End Sub
 
@@ -256,196 +256,196 @@ End Sub
 
 #If Mac Or Not UseScriptingDictionaryIfAvailable Then
 
-Private Function GetKeyValue(Key As Variant) As Variant
+Private Function dict_GetKeyValue(dict_Key As Variant) As Variant
     On Error Resume Next
-    GetKeyValue = pKeyValues(GetFormattedKey(Key))
+    dict_GetKeyValue = dict_pKeyValues(dict_GetFormattedKey(dict_Key))
     Err.Clear
 End Function
 
-Private Sub AddKeyValue(Key As Variant, Value As Variant, Optional Index As Long = -1)
+Private Sub dict_AddKeyValue(dict_Key As Variant, dict_Value As Variant, Optional dict_Index As Long = -1)
     If Me.Count = 0 Then
-        ReDim pKeys(0 To 0)
-        ReDim pItems(0 To 0)
+        ReDim dict_pKeys(0 To 0)
+        ReDim dict_pItems(0 To 0)
     Else
-        ReDim Preserve pKeys(0 To UBound(pKeys) + 1)
-        ReDim Preserve pItems(0 To UBound(pItems) + 1)
+        ReDim Preserve dict_pKeys(0 To UBound(dict_pKeys) + 1)
+        ReDim Preserve dict_pItems(0 To UBound(dict_pItems) + 1)
     End If
-    
-    Dim FormattedKey As String
-    FormattedKey = GetFormattedKey(Key)
-    
-    If Index > 0 And Index <= pKeyValues.Count Then
-        Dim i As Long
-        For i = UBound(pKeys) To Index Step -1
-            pKeys(i) = pKeys(i - 1)
-            If IsObject(pItems(i - 1)) Then
-                Set pItems(i) = pItems(i - 1)
+
+    Dim dict_FormattedKey As String
+    dict_FormattedKey = dict_GetFormattedKey(dict_Key)
+
+    If dict_Index > 0 And dict_Index <= dict_pKeyValues.Count Then
+        Dim dict_i As Long
+        For dict_i = UBound(dict_pKeys) To dict_Index Step -1
+            dict_pKeys(dict_i) = dict_pKeys(dict_i - 1)
+            If VBA.IsObject(dict_pItems(dict_i - 1)) Then
+                Set dict_pItems(dict_i) = dict_pItems(dict_i - 1)
             Else
-                pItems(i) = pItems(i - 1)
+                dict_pItems(dict_i) = dict_pItems(dict_i - 1)
             End If
-        Next i
-        
-        pKeys(Index - 1) = Key
-        If IsObject(Value) Then
-            Set pItems(Index - 1) = Value
+        Next dict_i
+
+        dict_pKeys(dict_Index - 1) = dict_Key
+        If VBA.IsObject(dict_Value) Then
+            Set dict_pItems(dict_Index - 1) = dict_Value
         Else
-            pItems(Index - 1) = Value
+            dict_pItems(dict_Index - 1) = dict_Value
         End If
-        
-        pKeyValues.Add Array(FormattedKey, Key, Value), FormattedKey, Before:=Index
+
+        dict_pKeyValues.Add Array(dict_FormattedKey, dict_Key, dict_Value), dict_FormattedKey, Before:=Index
     Else
-        If IsObject(Key) Then
+        If VBA.IsObject(Key) Then
             Set pKeys(UBound(pKeys)) = Key
         Else
             pKeys(UBound(pKeys)) = Key
         End If
-        If IsObject(Value) Then
-            Set pItems(UBound(pItems)) = Value
+        If VBA.IsObject(dict_Value) Then
+            Set dict_pItems(UBound(dict_pItems)) = dict_Value
         Else
-            pItems(UBound(pItems)) = Value
+            dict_pItems(UBound(dict_pItems)) = dict_Value
         End If
-        
-        pKeyValues.Add Array(FormattedKey, Key, Value), FormattedKey
+
+        dict_pKeyValues.Add Array(dict_FormattedKey, dict_Key, dict_Value), dict_FormattedKey
     End If
 End Sub
 
-Private Sub ReplaceKeyValue(KeyValue As Variant, Key As Variant, Value As Variant)
-    Dim Index As Long
-    Dim i As Integer
-    
-    For i = 0 To UBound(pKeys)
-        If pKeys(i) = KeyValue(1) Then
-            Index = i + 1
+Private Sub dict_ReplaceKeyValue(dict_KeyValue As Variant, dict_Key As Variant, dict_Value As Variant)
+    Dim dict_Index As Long
+    Dim dict_i As Integer
+
+    For dict_i = 0 To UBound(dict_pKeys)
+        If dict_pKeys(dict_i) = dict_KeyValue(1) Then
+            dict_Index = dict_i + 1
             Exit For
         End If
-    Next i
-    
-    ' Remove existing value
-    RemoveKeyValue KeyValue, Index
-    
-    ' Add new key value back
-    AddKeyValue Key, Value, Index
+    Next dict_i
+
+    ' Remove existing dict_Value
+    dict_RemoveKeyValue dict_KeyValue, dict_Index
+
+    ' Add new dict_Key dict_Value back
+    dict_AddKeyValue dict_Key, dict_Value, dict_Index
 End Sub
 
-Private Sub RemoveKeyValue(KeyValue As Variant, Optional ByVal Index As Long = -1)
-    Dim i As Long
-    If Index = -1 Then
-        For i = 0 To UBound(pKeys)
-            If pKeys(i) = KeyValue(1) Then
-                Index = i
+Private Sub dict_RemoveKeyValue(dict_KeyValue As Variant, Optional ByVal dict_Index As Long = -1)
+    Dim dict_i As Long
+    If dict_Index = -1 Then
+        For dict_i = 0 To UBound(dict_pKeys)
+            If dict_pKeys(dict_i) = dict_KeyValue(1) Then
+                dict_Index = dict_i
             End If
-        Next i
+        Next dict_i
     Else
-        Index = Index - 1
+        dict_Index = dict_Index - 1
     End If
-    
-    If Index >= 0 And Index <= UBound(pKeys) Then
-        For i = Index To UBound(pKeys) - 1
-            pKeys(i) = pKeys(i + 1)
-            
-            If IsObject(pItems(i + 1)) Then
-                Set pItems(i) = pItems(i + 1)
+
+    If dict_Index >= 0 And dict_Index <= UBound(dict_pKeys) Then
+        For dict_i = dict_Index To UBound(dict_pKeys) - 1
+            dict_pKeys(dict_i) = dict_pKeys(dict_i + 1)
+
+            If VBA.IsObject(dict_pItems(dict_i + 1)) Then
+                Set dict_pItems(dict_i) = dict_pItems(dict_i + 1)
             Else
-                pItems(i) = pItems(i + 1)
+                dict_pItems(dict_i) = dict_pItems(dict_i + 1)
             End If
-        Next i
-        
-        If UBound(pKeys) = 0 Then
-            Erase pKeys
-            Erase pItems
+        Next dict_i
+
+        If UBound(dict_pKeys) = 0 Then
+            Erase dict_pKeys
+            Erase dict_pItems
         Else
-            ReDim Preserve pKeys(0 To UBound(pKeys) - 1)
-            ReDim Preserve pItems(0 To UBound(pItems) - 1)
+            ReDim Preserve dict_pKeys(0 To UBound(dict_pKeys) - 1)
+            ReDim Preserve dict_pItems(0 To UBound(dict_pItems) - 1)
         End If
     End If
-    
+
     pKeyValues.Remove KeyValue(0)
-    RemoveObjectKey KeyValue(1)
+    dict_RemoveObjectKey KeyValue(1)
 End Sub
 
-Private Function GetFormattedKey(Key As Variant) As String
-    If IsObject(Key) Then
-        GetFormattedKey = GetObjectKey(Key)
-    ElseIf VarType(Key) = VBA.vbBoolean Then
-        GetFormattedKey = IIf(Key, "-1__-1", "0__0")
-    ElseIf VarType(Key) = VBA.vbString Then
-        GetFormattedKey = Key
-        
+Private Function dict_GetFormattedKey(dict_Key As Variant) As String
+    If VBA.IsObject(dict_Key) Then
+        dict_GetFormattedKey = dict_GetObjectKey(dict_Key)
+    ElseIf VarType(dict_Key) = VBA.vbBoolean Then
+        dict_GetFormattedKey = IIf(dict_Key, "-1__-1", "0__0")
+    ElseIf VarType(dict_Key) = VBA.vbString Then
+        dict_GetFormattedKey = dict_Key
+
         If Me.CompareMode = CompareMethod.BinaryCompare Then
             ' Collection does not have method of setting key comparison
             ' So case-sensitive keys aren't supported by default
             ' -> Approach: Append lowercase characters to original key
             '    AbC -> AbC___b_, abc -> abc__abc, ABC -> ABC_____
-            Dim Lowercase As String
-            Lowercase = ""
-            
-            Dim i As Integer
-            Dim Ascii As Integer
-            Dim Char As String
-            For i = 1 To Len(GetFormattedKey)
-                Char = VBA.Mid$(GetFormattedKey, i, 1)
-                Ascii = Asc(Char)
-                If Ascii >= 97 And Ascii <= 122 Then
-                    Lowercase = Lowercase & Char
+            Dim dict_Lowercase As String
+            dict_Lowercase = ""
+
+            Dim dict_i As Integer
+            Dim dict_Char As String
+            Dim dict_Ascii As Integer
+            For dict_i = 1 To VBA.Len(dict_GetFormattedKey)
+                dict_Char = VBA.Mid$(dict_GetFormattedKey, dict_i, 1)
+                dict_Ascii = VBA.Asc(dict_Char)
+                If dict_Ascii >= 97 And dict_Ascii <= 122 Then
+                    dict_Lowercase = dict_Lowercase & dict_Char
                 Else
-                    Lowercase = Lowercase & "_"
+                    dict_Lowercase = dict_Lowercase & "_"
                 End If
             Next i
-            
-            If Lowercase <> "" Then
-                GetFormattedKey = GetFormattedKey & "__" & Lowercase
+
+            If dict_Lowercase <> "" Then
+                dict_GetFormattedKey = dict_GetFormattedKey & "__" & dict_Lowercase
             End If
         End If
     Else
         ' For numbers, add duplicate to distinguish from strings
         ' ->  123  -> "123__123"
         '    "123" -> "123"
-        GetFormattedKey = CStr(Key) & "__" & CStr(Key)
+        dict_GetFormattedKey = VBA.CStr(dict_Key) & "__" & CStr(dict_Key)
     End If
 End Function
 
-Private Function GetObjectKey(ObjKey As Variant) As String
-    Dim i As Integer
-    For i = 1 To pObjectKeys.Count
-        If pObjectKeys.Item(i) Is ObjKey Then
-            GetObjectKey = "__object__" & i
+Private Function dict_GetObjectKey(dict_ObjKey As Variant) As String
+    Dim dict_i As Integer
+    For dict_i = 1 To dict_pObjectKeys.Count
+        If dict_pObjectKeys.Item(dict_i) Is dict_ObjKey Then
+            dict_GetObjectKey = "__object__" & dict_i
             Exit Function
         End If
-    Next i
-    
-    pObjectKeys.Add ObjKey
-    GetObjectKey = "__object__" & pObjectKeys.Count
+    Next dict_i
+
+    dict_pObjectKeys.Add dict_ObjKey
+    dict_GetObjectKey = "__object__" & dict_pObjectKeys.Count
 End Function
 
-Private Sub RemoveObjectKey(ObjKey As Variant)
-    Dim i As Integer
-    For i = 1 To pObjectKeys.Count
-        If pObjectKeys.Item(i) Is ObjKey Then
-            pObjectKeys.Remove i
+Private Sub dict_RemoveObjectKey(dict_ObjKey As Variant)
+    Dim dict_i As Integer
+    For dict_i = 1 To dict_pObjectKeys.Count
+        If dict_pObjectKeys.Item(dict_i) Is dict_ObjKey Then
+            dict_pObjectKeys.Remove dict_i
             Exit Sub
         End If
-    Next i
+    Next dict_i
 End Sub
 
 #End If
 
 Private Sub Class_Initialize()
 #If Mac Or Not UseScriptingDictionaryIfAvailable Then
-    Set pKeyValues = New Collection
-    
-    Erase pKeys
-    Erase pItems
-    Set pObjectKeys = New Collection
+    Set dict_pKeyValues = New Collection
+
+    Erase dict_pKeys
+    Erase dict_pItems
+    Set dict_pObjectKeys = New Collection
 #Else
-    Set pDictionary = CreateObject("Scripting.Dictionary")
+    Set dict_pDictionary = CreateObject("Scripting.Dictionary")
 #End If
 End Sub
 
 Private Sub Class_Terminate()
 #If Mac Or Not UseScriptingDictionaryIfAvailable Then
-    Set pKeyValues = Nothing
-    Set pObjectKeys = Nothing
+    Set dict_pKeyValues = Nothing
+    Set dict_pObjectKeys = Nothing
 #Else
-    Set pDictionary = Nothing
+    Set dict_pDictionary = Nothing
 #End If
 End Sub
