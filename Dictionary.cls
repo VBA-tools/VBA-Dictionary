@@ -292,12 +292,12 @@ Private Sub dict_AddKeyValue(dict_Key As Variant, dict_Value As Variant, Optiona
             dict_pItems(dict_Index - 1) = dict_Value
         End If
 
-        dict_pKeyValues.Add Array(dict_FormattedKey, dict_Key, dict_Value), dict_FormattedKey, Before:=Index
+        dict_pKeyValues.Add Array(dict_FormattedKey, dict_Key, dict_Value), dict_FormattedKey, Before:=dict_Index
     Else
-        If VBA.IsObject(Key) Then
-            Set pKeys(UBound(pKeys)) = Key
+        If VBA.IsObject(dict_Key) Then
+            Set dict_pKeys(UBound(dict_pKeys)) = dict_Key
         Else
-            pKeys(UBound(pKeys)) = Key
+            dict_pKeys(UBound(dict_pKeys)) = dict_Key
         End If
         If VBA.IsObject(dict_Value) Then
             Set dict_pItems(UBound(dict_pItems)) = dict_Value
@@ -313,12 +313,7 @@ Private Sub dict_ReplaceKeyValue(dict_KeyValue As Variant, dict_Key As Variant, 
     Dim dict_Index As Long
     Dim dict_i As Integer
 
-    For dict_i = 0 To UBound(dict_pKeys)
-        If dict_pKeys(dict_i) = dict_KeyValue(1) Then
-            dict_Index = dict_i + 1
-            Exit For
-        End If
-    Next dict_i
+    dict_Index = dict_GetKeyIndex(dict_KeyValue(1))
 
     ' Remove existing dict_Value
     dict_RemoveKeyValue dict_KeyValue, dict_Index
@@ -330,11 +325,7 @@ End Sub
 Private Sub dict_RemoveKeyValue(dict_KeyValue As Variant, Optional ByVal dict_Index As Long = -1)
     Dim dict_i As Long
     If dict_Index = -1 Then
-        For dict_i = 0 To UBound(dict_pKeys)
-            If dict_pKeys(dict_i) = dict_KeyValue(1) Then
-                dict_Index = dict_i
-            End If
-        Next dict_i
+        dict_Index = dict_GetKeyIndex(dict_KeyValue(1))
     Else
         dict_Index = dict_Index - 1
     End If
@@ -359,8 +350,8 @@ Private Sub dict_RemoveKeyValue(dict_KeyValue As Variant, Optional ByVal dict_In
         End If
     End If
 
-    pKeyValues.Remove KeyValue(0)
-    dict_RemoveObjectKey KeyValue(1)
+    dict_pKeyValues.Remove dict_KeyValue(0)
+    dict_RemoveObjectKey dict_KeyValue(1)
 End Sub
 
 Private Function dict_GetFormattedKey(dict_Key As Variant) As String
@@ -390,7 +381,7 @@ Private Function dict_GetFormattedKey(dict_Key As Variant) As String
                 Else
                     dict_Lowercase = dict_Lowercase & "_"
                 End If
-            Next i
+            Next dict_i
 
             If dict_Lowercase <> "" Then
                 dict_GetFormattedKey = dict_GetFormattedKey & "__" & dict_Lowercase
@@ -426,6 +417,23 @@ Private Sub dict_RemoveObjectKey(dict_ObjKey As Variant)
         End If
     Next dict_i
 End Sub
+
+Private Function dict_GetKeyIndex(dict_Key As Variant) As Long
+    Dim dict_i As Long
+    For dict_i = 0 To UBound(dict_pKeys)
+        If VBA.IsObject(dict_pKeys(dict_i)) And VBA.IsObject(dict_Key) Then
+            If dict_pKeys(dict_i) Is dict_Key Then
+                dict_GetKeyIndex = dict_i
+                Exit For
+            End If
+        ElseIf VBA.IsObject(dict_pKeys(dict_i)) Or VBA.IsObject(dict_Key) Then
+            ' Both need to be objects to check equality, skip
+        ElseIf dict_pKeys(dict_i) = dict_Key Then
+            dict_GetKeyIndex = dict_i
+            Exit For
+        End If
+    Next dict_i
+End Function
 
 #End If
 

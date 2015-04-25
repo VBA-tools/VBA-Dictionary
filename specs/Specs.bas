@@ -1,16 +1,32 @@
 Attribute VB_Name = "Specs"
-Public Function Specs() As SpecSuite
+Private pForDisplay As Boolean
+Private pUseNative As Boolean
+
+Public Sub SpeedTest()
     #If Mac Then
         ' Mac
-        InlineRunner.RunSuite AllSpecs(UseNative:=False)
-        SpeedTest CompareToNative:=False
+        ExecuteSpeedTest CompareToNative:=False
     #Else
         ' Windows
-        InlineRunner.RunSuite AllSpecs(UseNative:=True)
-        InlineRunner.RunSuite AllSpecs(UseNative:=False)
-        SpeedTest CompareToNative:=True
+        ExecuteSpeedTest CompareToNative:=True
     #End If
-End Function
+End Sub
+
+Sub ToggleNative(Optional Enabled As Boolean = True)
+    Dim Code As CodeModule
+    Dim Lines As Variant
+    Dim i As Integer
+    
+    Set Code = ThisWorkbook.VBProject.VBComponents("Dictionary").CodeModule
+    Lines = Split(Code.Lines(1, 50), vbNewLine)
+    
+    For i = 0 To UBound(Lines)
+        If InStr(1, Lines(i), "#Const UseScriptingDictionaryIfAvailable") Then
+            Code.ReplaceLine i + 1, "#Const UseScriptingDictionaryIfAvailable = " & Enabled
+            Exit Sub
+        End If
+    Next i
+End Sub
 
 Public Sub RunSpecs()
     DisplayRunner.IdCol = 1
@@ -18,11 +34,32 @@ Public Sub RunSpecs()
     DisplayRunner.ResultCol = 2
     DisplayRunner.OutputStartRow = 4
     
-    DisplayRunner.RunSuite AllSpecs(UseNative:=False)
+    pForDisplay = True
+    DisplayRunner.RunSuite Specs()
+    pForDisplay = False
 End Sub
 
-Public Function AllSpecs(Optional UseNative As Boolean = False) As SpecSuite
-    Dim Specs As New SpecSuite
+Public Function Specs() As SpecSuite
+    Dim UseNative As Boolean
+
+#If Mac Then
+    UseNative = False
+#Else
+    If pUseNative Then
+        UseNative = True
+        pUseNative = False
+    Else
+        If Not pForDisplay Then
+            ' Run native specs first
+            pUseNative = True
+            Specs
+        End If
+        
+        UseNative = False
+    End If
+#End If
+
+    Set Specs = New SpecSuite
     If UseNative Then
         Specs.Description = "Scripting.Dictionary"
     Else
@@ -34,6 +71,8 @@ Public Function AllSpecs(Optional UseNative As Boolean = False) As SpecSuite
     Dim Keys As Variant
     Dim Key As Variant
     Dim Item As Variant
+    Dim A As New Collection
+    Dim B As New Dictionary
     
     ' Properties
     ' ------------------------- '
@@ -175,10 +214,10 @@ Public Function AllSpecs(Optional UseNative As Boolean = False) As SpecSuite
     With Specs.It("should handle object keys")
         Set Dict = CreateDictionary(UseNative)
         
-        Dim A As New Collection
-        A.Add 123
+        Set A = New Collection
+        Set B = New Dictionary
         
-        Dim B As New Dictionary
+        A.Add 123
         B.Add "a", 456
         
         Dict.Add A, "123"
@@ -418,11 +457,10 @@ Public Function AllSpecs(Optional UseNative As Boolean = False) As SpecSuite
     End With
     
     On Error GoTo 0
-    
-    Set AllSpecs = Specs
+    InlineRunner.RunSuite Specs
 End Function
 
-Public Sub SpeedTest(Optional CompareToNative As Boolean = False)
+Public Sub ExecuteSpeedTest(Optional CompareToNative As Boolean = False)
     Dim Counts As Variant
     Counts = Array(5000, 5000, 5000, 5000, 7500, 7500, 7500, 7500)
     
