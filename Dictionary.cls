@@ -31,6 +31,7 @@ Option Explicit
 Private pKeyValues As Collection
 Private pKeys() As Variant
 Private pItems() As Variant
+Private pObjectKeys As Collection
 Private pCompareMode As CompareMethod
 
 #Else
@@ -293,7 +294,11 @@ Private Sub AddKeyValue(Key As Variant, Value As Variant, Optional Index As Long
         
         pKeyValues.Add Array(FormattedKey, Key, Value), FormattedKey, Before:=Index
     Else
-        pKeys(UBound(pKeys)) = Key
+        If IsObject(Key) Then
+            Set pKeys(UBound(pKeys)) = Key
+        Else
+            pKeys(UBound(pKeys)) = Key
+        End If
         If IsObject(Value) Then
             Set pItems(UBound(pItems)) = Value
         Else
@@ -355,36 +360,72 @@ Private Sub RemoveKeyValue(KeyValue As Variant, Optional ByVal Index As Long = -
     End If
     
     pKeyValues.Remove KeyValue(0)
+    RemoveObjectKey KeyValue(1)
 End Sub
 
 Private Function GetFormattedKey(Key As Variant) As String
-    GetFormattedKey = CStr(Key)
-    If Me.CompareMode = CompareMethod.BinaryCompare Then
-        ' Collection does not have method of setting key comparison
-        ' So case-sensitive keys aren't supported by default
-        ' -> Approach: Append lowercase characters to original key
-        '    AbC -> AbC__b, abc -> abc__abc, ABC -> ABC
-        '    Won't work in very strange cases, but should work for now
-        '    AbBb -> AbBb__bb matches AbbB -> AbbB__bb
-        Dim Lowercase As String
-        Lowercase = ""
+    If IsObject(Key) Then
+        GetFormattedKey = GetObjectKey(Key)
+    ElseIf VarType(Key) = VBA.vbBoolean Then
+        GetFormattedKey = IIf(Key, "-1__-1", "0__0")
+    ElseIf VarType(Key) = VBA.vbString Then
+        GetFormattedKey = Key
         
-        Dim i As Integer
-        Dim Ascii As Integer
-        Dim Char As String
-        For i = 1 To Len(GetFormattedKey)
-            Char = VBA.Mid$(GetFormattedKey, i, 1)
-            Ascii = Asc(Char)
-            If Ascii >= 97 And Ascii <= 122 Then
-                Lowercase = Lowercase & Char
+        If Me.CompareMode = CompareMethod.BinaryCompare Then
+            ' Collection does not have method of setting key comparison
+            ' So case-sensitive keys aren't supported by default
+            ' -> Approach: Append lowercase characters to original key
+            '    AbC -> AbC___b_, abc -> abc__abc, ABC -> ABC_____
+            Dim Lowercase As String
+            Lowercase = ""
+            
+            Dim i As Integer
+            Dim Ascii As Integer
+            Dim Char As String
+            For i = 1 To Len(GetFormattedKey)
+                Char = VBA.Mid$(GetFormattedKey, i, 1)
+                Ascii = Asc(Char)
+                If Ascii >= 97 And Ascii <= 122 Then
+                    Lowercase = Lowercase & Char
+                Else
+                    Lowercase = Lowercase & "_"
+                End If
+            Next i
+            
+            If Lowercase <> "" Then
+                GetFormattedKey = GetFormattedKey & "__" & Lowercase
             End If
-        Next i
-        
-        If Lowercase <> "" Then
-            GetFormattedKey = GetFormattedKey & "__" & Lowercase
         End If
+    Else
+        ' For numbers, add duplicate to distinguish from strings
+        ' ->  123  -> "123__123"
+        '    "123" -> "123"
+        GetFormattedKey = CStr(Key) & "__" & CStr(Key)
     End If
 End Function
+
+Private Function GetObjectKey(ObjKey As Variant) As String
+    Dim i As Integer
+    For i = 1 To pObjectKeys.Count
+        If pObjectKeys.Item(i) Is ObjKey Then
+            GetObjectKey = "__object__" & i
+            Exit Function
+        End If
+    Next i
+    
+    pObjectKeys.Add ObjKey
+    GetObjectKey = "__object__" & pObjectKeys.Count
+End Function
+
+Private Sub RemoveObjectKey(ObjKey As Variant)
+    Dim i As Integer
+    For i = 1 To pObjectKeys.Count
+        If pObjectKeys.Item(i) Is ObjKey Then
+            pObjectKeys.Remove i
+            Exit Sub
+        End If
+    Next i
+End Sub
 
 #End If
 
@@ -394,6 +435,7 @@ Private Sub Class_Initialize()
     
     Erase pKeys
     Erase pItems
+    Set pObjectKeys = New Collection
 #Else
     Set pDictionary = CreateObject("Scripting.Dictionary")
 #End If
@@ -402,6 +444,7 @@ End Sub
 Private Sub Class_Terminate()
 #If Mac Or Not UseScriptingDictionaryIfAvailable Then
     Set pKeyValues = Nothing
+    Set pObjectKeys = Nothing
 #Else
     Set pDictionary = Nothing
 #End If
