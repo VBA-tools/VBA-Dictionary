@@ -7,7 +7,7 @@ VBA-Dictionary is a drop-in replacement for the useful and powerful `Scripting.D
 ```VB.net
 ' (Works exactly like Scripting.Dictionary)
 Dim Dict As New Dictionary
-Dict.CompareMode = CompareMethods.TextCompare
+Dict.CompareMode = CompareMethod.TextCompare
 
 Dict("A") ' -> Empty
 Dict("A") = 123
@@ -35,7 +35,7 @@ Dict.Remove "B"
 ' -> Throws 32811: Application-defined or object-defined error
 
 ' Trying to change CompareMode when there are items in the Dictionary throws 5
-Dict.CompareMode = CompareMethods.BinaryCompare
+Dict.CompareMode = CompareMethod.BinaryCompare
 ' -> Throws 5: Invalid procedure call or argument
 
 Dict.Remove "A"
