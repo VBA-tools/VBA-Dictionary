@@ -101,27 +101,61 @@ Public Function Specs() As SpecSuite
         .Expect(Dict("D")).ToBeEmpty
     End With
     
-    With Specs.It("should let/set item by key")
+    With Specs.It("should let item by key")
         Set Dict = CreateDictionary(UseNative)
         
         Dict.Add "A", 123
-        Dict("A") = 456
-        
         Dict.Add "B", 3.14
         Dict.Add "C", "ABC"
         
-        Dict.Item("D") = True
-        Dict("C") = "DEF"
+        ' Let + New
+        Dict("D") = True
         
-        Set Dict.Item("B") = CreateDictionary(UseNative)
-        Dict.Item("B").Add "key", "B"
+        ' Let + Replace
+        Dict("A") = 456
+        Dict("B") = 3.14159
+        
+        ' Should have correct values
+        .Expect(Dict("A")).ToEqual 456
+        .Expect(Dict("B")).ToEqual 3.14159
+        .Expect(Dict("C")).ToEqual "ABC"
+        .Expect(Dict("D")).ToEqual True
+        
+        ' Should have correct order
+        .Expect(Dict.Keys()(0)).ToEqual "A"
+        .Expect(Dict.Keys()(1)).ToEqual "B"
+        .Expect(Dict.Keys()(2)).ToEqual "C"
+        .Expect(Dict.Keys()(3)).ToEqual "D"
+    End With
+    
+    With Specs.It("should set item by key")
+        Set Dict = CreateDictionary(UseNative)
+
+        Dict.Add "A", 123
+        Dict.Add "B", 3.14
+        Dict.Add "C", "ABC"
+
+        ' Set + New
+        Set Dict("D") = CreateDictionary(UseNative)
+        Dict("D").Add "key", "D"
+
+        ' Set + Replace
         Set Dict("A") = CreateDictionary(UseNative)
         Dict("A").Add "key", "A"
-        
+        Set Dict("B") = CreateDictionary(UseNative)
+        Dict("B").Add "key", "B"
+
+        ' Should have correct values
         .Expect(Dict.Item("A")("key")).ToEqual "A"
         .Expect(Dict.Item("B")("key")).ToEqual "B"
-        .Expect(Dict.Item("C")).ToEqual "DEF"
-        .Expect(Dict.Item("D")).ToEqual True
+        .Expect(Dict.Item("C")).ToEqual "ABC"
+        .Expect(Dict.Item("D")("key")).ToEqual "D"
+
+        ' Should have correct order
+        .Expect(Dict.Keys()(0)).ToEqual "A"
+        .Expect(Dict.Keys()(1)).ToEqual "B"
+        .Expect(Dict.Keys()(2)).ToEqual "C"
+        .Expect(Dict.Keys()(3)).ToEqual "D"
     End With
     
     With Specs.It("should change key")
