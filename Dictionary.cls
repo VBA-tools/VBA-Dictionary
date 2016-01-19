@@ -327,7 +327,7 @@ Private Sub dict_RemoveKeyValue(dict_KeyValue As Variant, Optional ByVal dict_In
     If dict_Index = -1 Then
         dict_Index = dict_GetKeyIndex(dict_KeyValue(1))
     Else
-        dict_Index = dict_Index - 1
+        dict_Index = dict_Index
     End If
 
     If dict_Index >= 0 And dict_Index <= UBound(dict_pKeys) Then
