@@ -14,7 +14,7 @@ Dict("A") = 123
 Dict("A") ' -> = Dict.Item("A") = 123
 Dict.Exists "A" ' -> True
 
-Dict.Add "A", 456 
+Dict.Add "A", 456
 ' -> Throws 457: This key is already associated with an element of this collection
 
 ' Both Set and Let work
@@ -46,6 +46,10 @@ Dict("C") ' -> Empty
 ```
 
 ### Release Notes
+
+#### 1.4.0
+
+- Fix indexing issues for `Keys` and `Items`
 
 #### 1.3.0
 
