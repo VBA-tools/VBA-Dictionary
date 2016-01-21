@@ -274,9 +274,10 @@ Private Sub dict_AddKeyValue(dict_Key As Variant, dict_Value As Variant, Optiona
     Dim dict_FormattedKey As String
     dict_FormattedKey = dict_GetFormattedKey(dict_Key)
 
-    If dict_Index > 0 And dict_Index <= dict_pKeyValues.Count Then
+    If dict_Index >= 0 And dict_Index < dict_pKeyValues.Count Then
+        ' Shift keys/items after + including index into empty last slot
         Dim dict_i As Long
-        For dict_i = UBound(dict_pKeys) To dict_Index Step -1
+        For dict_i = UBound(dict_pKeys) To dict_Index + 1 Step -1
             dict_pKeys(dict_i) = dict_pKeys(dict_i - 1)
             If VBA.IsObject(dict_pItems(dict_i - 1)) Then
                 Set dict_pItems(dict_i) = dict_pItems(dict_i - 1)
@@ -285,15 +286,18 @@ Private Sub dict_AddKeyValue(dict_Key As Variant, dict_Value As Variant, Optiona
             End If
         Next dict_i
 
-        dict_pKeys(dict_Index - 1) = dict_Key
+        ' Add key/item at index
+        dict_pKeys(dict_Index) = dict_Key
         If VBA.IsObject(dict_Value) Then
-            Set dict_pItems(dict_Index - 1) = dict_Value
+            Set dict_pItems(dict_Index) = dict_Value
         Else
-            dict_pItems(dict_Index - 1) = dict_Value
+            dict_pItems(dict_Index) = dict_Value
         End If
 
-        dict_pKeyValues.Add Array(dict_FormattedKey, dict_Key, dict_Value), dict_FormattedKey, Before:=dict_Index
+        ' Add key-value at proper index
+        dict_pKeyValues.Add Array(dict_FormattedKey, dict_Key, dict_Value), dict_FormattedKey, Before:=dict_Index + 1
     Else
+        ' Add key-value as last item
         If VBA.IsObject(dict_Key) Then
             Set dict_pKeys(UBound(dict_pKeys)) = dict_Key
         Else
@@ -326,11 +330,10 @@ Private Sub dict_RemoveKeyValue(dict_KeyValue As Variant, Optional ByVal dict_In
     Dim dict_i As Long
     If dict_Index = -1 Then
         dict_Index = dict_GetKeyIndex(dict_KeyValue(1))
-    Else
-        dict_Index = dict_Index - 1
     End If
 
     If dict_Index >= 0 And dict_Index <= UBound(dict_pKeys) Then
+        ' Shift keys/items after index down
         For dict_i = dict_Index To UBound(dict_pKeys) - 1
             dict_pKeys(dict_i) = dict_pKeys(dict_i + 1)
 
@@ -341,6 +344,7 @@ Private Sub dict_RemoveKeyValue(dict_KeyValue As Variant, Optional ByVal dict_In
             End If
         Next dict_i
 
+        ' Resize keys/items to remove empty slot
         If UBound(dict_pKeys) = 0 Then
             Erase dict_pKeys
             Erase dict_pItems
