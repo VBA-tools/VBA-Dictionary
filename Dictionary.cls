@@ -7,6 +7,7 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = True
+Attribute VB_Description = "Drop-in replacement for Scripting.Dictionary on Mac\r\n\r\nDictionary v1.4.0\r\n(c) Tim Hall - https://github.com/timhall/VBA-Dictionary\r\nAuthor: tim.hall.engr@gmail.com\r\nLicense: MIT (http://www.opensource.org/licenses/mit-license.php)\r\n"
 ''
 ' Dictionary v1.4.0
 ' (c) Tim Hall - https://github.com/timhall/VBA-Dictionary
@@ -55,6 +56,7 @@ End Enum
 ' --------------------------------------------- '
 
 Public Property Get CompareMode() As CompareMethod
+Attribute CompareMode.VB_Description = "Set or get the string comparison method."
 #If Mac Or Not UseScriptingDictionaryIfAvailable Then
     CompareMode = dict_pCompareMode
 #Else
@@ -76,6 +78,7 @@ Public Property Let CompareMode(Value As CompareMethod)
 End Property
 
 Public Property Get Count() As Long
+Attribute Count.VB_Description = "Get the number of items in the dictionary.\n"
 #If Mac Or Not UseScriptingDictionaryIfAvailable Then
     Count = dict_pKeyValues.Count
 #Else
@@ -84,6 +87,7 @@ Public Property Get Count() As Long
 End Property
 
 Public Property Get Item(Key As Variant) As Variant
+Attribute Item.VB_Description = "Set or get the item for a given key."
 Attribute Item.VB_UserMemId = 0
 #If Mac Or Not UseScriptingDictionaryIfAvailable Then
     Dim dict_KeyValue As Variant
@@ -130,6 +134,7 @@ Public Property Set Item(Key As Variant, Value As Variant)
 End Property
 
 Public Property Let Key(Previous As Variant, Updated As Variant)
+Attribute Key.VB_Description = "Change a key to a different key."
 #If Mac Or Not UseScriptingDictionaryIfAvailable Then
     Dim dict_KeyValue As Variant
     dict_KeyValue = dict_GetKeyValue(Previous)
@@ -153,6 +158,7 @@ End Property
 ' @param {Variant} Item
 ' --------------------------------------------- '
 Public Sub Add(Key As Variant, Item As Variant)
+Attribute Add.VB_Description = "Add a new key and item to the dictionary."
 #If Mac Or Not UseScriptingDictionaryIfAvailable Then
     If Not Me.Exists(Key) Then
         dict_AddKeyValue Key, Item
@@ -172,6 +178,7 @@ End Sub
 ' @return {Boolean}
 ' --------------------------------------------- '
 Public Function Exists(Key As Variant) As Boolean
+Attribute Exists.VB_Description = "Determine if a given key is in the dictionary."
 #If Mac Or Not UseScriptingDictionaryIfAvailable Then
     Exists = Not IsEmpty(dict_GetKeyValue(Key))
 #Else
@@ -185,6 +192,7 @@ End Function
 ' @return {Variant}
 ' --------------------------------------------- '
 Public Function Items() As Variant
+Attribute Items.VB_Description = "Get an array containing all items in the dictionary."
 #If Mac Or Not UseScriptingDictionaryIfAvailable Then
     If Me.Count > 0 Then
         Items = dict_pItems
@@ -203,6 +211,7 @@ End Function
 ' @return {Variant}
 ' --------------------------------------------- '
 Public Function Keys() As Variant
+Attribute Keys.VB_Description = "Get an array containing all keys in the dictionary."
 #If Mac Or Not UseScriptingDictionaryIfAvailable Then
     If Me.Count > 0 Then
         Keys = dict_pKeys
@@ -221,6 +230,7 @@ End Function
 ' @param {Variant} Key
 ' --------------------------------------------- '
 Public Sub Remove(Key As Variant)
+Attribute Remove.VB_Description = "Remove a given key from the dictionary."
 #If Mac Or Not UseScriptingDictionaryIfAvailable Then
     Dim dict_KeyValue As Variant
     dict_KeyValue = dict_GetKeyValue(Key)
@@ -240,6 +250,7 @@ End Sub
 ' Remove all items
 ' --------------------------------------------- '
 Public Sub RemoveAll()
+Attribute RemoveAll.VB_Description = "Remove all information from the dictionary."
 #If Mac Or Not UseScriptingDictionaryIfAvailable Then
     Set dict_pKeyValues = New Collection
 
