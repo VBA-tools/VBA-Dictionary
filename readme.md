@@ -50,6 +50,7 @@ Dict("C") ' -> Empty
 #### 1.4.0
 
 - Fix indexing issues for `Keys` and `Items`
+- __1.4.1__ Add descriptions for Object Browser
 
 #### 1.3.0
 
