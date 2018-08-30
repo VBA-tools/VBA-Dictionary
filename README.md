@@ -2,6 +2,10 @@
 
 VBA-Dictionary is a drop-in replacement for the useful and powerful `Scripting.Dictionary` so that it can be used with both Mac and Windows. It is designed to be a precise replacement to `Scripting.Dictionary` including `Item` as the default property (`Dict("A") = Dict.Item("A")`), matching error codes, and matching methods and properties. If you find any implementation differences between `Scripting.Dictionary` and VBA-Dictionary, please [create an issue](https://github.com/timhall/VBA-Dictionary/issues/new).
 
+<a href="https://www.patreon.com/timhall">
+  <img src="https://timhall.github.io/assets/donate-patreon@2x.png" width="217" alt="Donate">
+</a>
+
 ## Installing
 
 Download the [latest release](https://github.com/VBA-tools/VBA-Dictionary/releases), unzip, and import `Dictionary.cls` into your VBA project.
