@@ -1,5 +1,5 @@
 [package]
-name = "dictionary"
+name = "vba-tools/dictionary"
 version = "1.4.1"
 authors = ["Tim Hall <tim.hall.engr@gmail.com> (https://github.com/timhall)"]
 

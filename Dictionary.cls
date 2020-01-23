@@ -7,22 +7,18 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = True
-Attribute VB_Description = "Drop-in replacement for Scripting.Dictionary on Mac\r\n\r\nDictionary v1.4.0\r\n(c) Tim Hall - https://github.com/timhall/VBA-Dictionary\r\nAuthor: tim.hall.engr@gmail.com\r\nLicense: MIT (http://www.opensource.org/licenses/mit-license.php)\r\n"
+Attribute VB_Description = "Drop-in replacement for Scripting.Dictionary on Mac\r\n(c) Tim Hall - https://github.com/vba-tools/vba-dictionary"
 ''
-' Dictionary v1.4.1
-' (c) Tim Hall - https://github.com/timhall/VBA-Dictionary
+' # Dictionary
 '
 ' Drop-in replacement for Scripting.Dictionary on Mac
 '
-' @author: tim.hall.engr@gmail.com
-' @license: MIT (http://www.opensource.org/licenses/mit-license.php
-'
+' @class Dictionary
+' @author tim.hall.engr@gmail.com
+' @repository https://github.com/vba-tools/vba-dictionary
+' @license MIT
 ' ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ '
 Option Explicit
-
-' --------------------------------------------- '
-' Constants and Private Variables
-' --------------------------------------------- '
 
 #Const UseScriptingDictionaryIfAvailable = True
 
@@ -41,19 +37,11 @@ Private dict_pDictionary As Object
 
 #End If
 
-' --------------------------------------------- '
-' Types
-' --------------------------------------------- '
-
 Public Enum CompareMethod
     BinaryCompare = VBA.vbBinaryCompare
     TextCompare = VBA.vbTextCompare
     DatabaseCompare = VBA.vbDatabaseCompare
 End Enum
-
-' --------------------------------------------- '
-' Properties
-' --------------------------------------------- '
 
 Public Property Get CompareMode() As CompareMethod
 Attribute CompareMode.VB_Description = "Set or get the string comparison method."
@@ -146,10 +134,6 @@ Attribute Key.VB_Description = "Change a key to a different key."
     dict_pDictionary.Key(Previous) = Updated
 #End If
 End Property
-
-' ============================================= '
-' Public Methods
-' ============================================= '
 
 ''
 ' Add an item with the given key
@@ -261,8 +245,6 @@ Attribute RemoveAll.VB_Description = "Remove all information from the dictionary
 #End If
 End Sub
 
-' ============================================= '
-' Private Functions
 ' ============================================= '
 
 #If Mac Or Not UseScriptingDictionaryIfAvailable Then
