@@ -438,8 +438,6 @@ End Function
 
 Public Function NewEnum() As IUnknown
 Attribute NewEnum.VB_UserMemId = -4
-  'This Routine  Get the Enumerator for the Collection.
-  'To get this to work you must add two attributes
     Dim elem As Variant
 
     Set coll = New Collection
