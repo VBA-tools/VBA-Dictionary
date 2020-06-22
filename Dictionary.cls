@@ -22,6 +22,8 @@ Option Explicit
 
 #Const UseScriptingDictionaryIfAvailable = True
 
+Private coll As Collection
+
 #If Mac Or Not UseScriptingDictionaryIfAvailable Then
 
 ' dict_KeyValue 0: FormattedKey, 1: OriginalKey, 2: Value
@@ -433,6 +435,28 @@ Private Function dict_GetKeyIndex(dict_Key As Variant) As Long
 End Function
 
 #End If
+
+Public Function NewEnum() As IUnknown
+Attribute NewEnum.VB_UserMemId = -4
+  'This Routine  Get the Enumerator for the Collection.
+  'To get this to work you must add two attributes
+    Dim elem As Variant
+
+    Set coll = New Collection
+
+    #If Mac Or Not UseScriptingDictionaryIfAvailable Then
+        For Each elem In dict_pKeyValues
+            coll.Add elem
+            Set NewEnum = coll.[_NewEnum]
+        Next elem
+    #Else
+        For Each elem In dict_pDictionary.Keys
+            coll.Add elem
+        Next elem
+    #End If
+    
+    Set NewEnum = coll.[_NewEnum]
+End Function
 
 Private Sub Class_Initialize()
 #If Mac Or Not UseScriptingDictionaryIfAvailable Then
