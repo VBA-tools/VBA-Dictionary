@@ -447,7 +447,6 @@ Attribute NewEnum.VB_UserMemId = -4
     #If Mac Or Not UseScriptingDictionaryIfAvailable Then
         For Each elem In dict_pKeyValues
             coll.Add elem
-            Set NewEnum = coll.[_NewEnum]
         Next elem
     #Else
         For Each elem In dict_pDictionary.Keys
